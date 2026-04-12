@@ -1,0 +1,41 @@
+{
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "python.languageServer": "None",
+    "ruff.lineLength": 88,
+    "ruff.nativeServer": "on",
+    "ruff.fixAll": true,
+    "ruff.importStrategy": "fromEnvironment",
+    "ruff.lint.enable": true,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "always",
+        "source.fixAll.ruff": "always"
+    },
+    "ruff.lint.extendSelect": [
+        "B",
+        "I",
+        "N",
+        "Q",
+        "UP"
+    ],
+    "autoDocstring.docstringFormat": "google",
+    "autoDocstring.guessTypes": true,
+    "python.analysis.typeCheckingMode": "off",
+    "python.analysis.diagnosticMode": "openFileOnly",
+    "errorLens.followCursor": "activeLine",
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/__pycache__": true,
+        "**/.ruff_cache": true
+    },
+    "[jsonc]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "[markdown]": {
+        "editor.defaultFormatter": "yzhang.markdown-all-in-one"
+    }
+}
