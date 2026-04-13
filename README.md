@@ -1,4 +1,4 @@
-# 📚 Biblioteca Digital - AI Driven Development
+## 📚 Biblioteca Digital - AI Driven Development
 
 Aplicacion FastAPI intencionalmente simple y con malas practicas. Todo el codigo esta en `src/main.py` y la persistencia actual se hace en `src/library.json` mediante I/O bloqueante sin locks. Esta base sirve como punto de partida para un refactor completo guiado por IA.
 
@@ -444,3 +444,4 @@ Durante el refactor, consulta la documentacion oficial:
 ## ℹ️ Nota
 
 Repositorio para fines educativos - no usar en produccion.
+

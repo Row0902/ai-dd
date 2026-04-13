@@ -1,16 +1,15 @@
 {
     "editor.defaultFormatter": "charliermarsh.ruff",
     "editor.formatOnSave": true,
-    "python.languageServer": "None",
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "always",
+        "source.fixAll.ruff": "always"
+    },
     "ruff.lineLength": 88,
     "ruff.nativeServer": "on",
     "ruff.fixAll": true,
     "ruff.importStrategy": "fromEnvironment",
     "ruff.lint.enable": true,
-    "editor.codeActionsOnSave": {
-        "source.organizeImports": "always",
-        "source.fixAll.ruff": "always"
-    },
     "ruff.lint.extendSelect": [
         "B",
         "I",
@@ -20,8 +19,9 @@
     ],
     "autoDocstring.docstringFormat": "google",
     "autoDocstring.guessTypes": true,
+    "python.languageServer": "None",
     "python.analysis.typeCheckingMode": "off",
-    "python.analysis.diagnosticMode": "openFileOnly",
+    "python.analysis.diagnosticMode": "openFilesOnly",
     "errorLens.followCursor": "activeLine",
     "files.exclude": {
         "**/.git": true,
@@ -37,5 +37,11 @@
     },
     "[markdown]": {
         "editor.defaultFormatter": "yzhang.markdown-all-in-one"
-    }
+    },
+    "[toml]": {
+        "editor.defaultFormatter": "tamasfe.even-better-toml"
+    },
+    "conventionalCommits.scopes": [
+        "doc"
+    ]
 }
