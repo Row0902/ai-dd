@@ -58,4 +58,4 @@ possibly-unresolved-reference = "warn"
 [tool.pytest.ini_options]
 addopts = "-ra -q"
 pythonpath = ["src"]
-testpaths = ["src/test"]
+testpaths = ["tests"]
