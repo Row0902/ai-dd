@@ -37,13 +37,13 @@ Chained PRs recommended: Yes
 
 ## PR 2: Integration (~350 lines)
 
-- [ ] 2.1 [seq] Add `validator: Validator[Book] | None = None` to `create_book`, `update_book`, `replace_book`; call `.validate()` before repo, raise `DomainError` on failure (~100)
-- [ ] 2.2 [par] Add `@field_validator` to `BookPayload` in `schemas.py` — reject empty name/author+whitespace, malformed URL (~25)
-- [ ] 2.3 [seq] Catch `ValidationError` in `routers/books.py` → HTTP 422 with `{"detail": [{"field","message"}]}` (~30)
-- [ ] 2.4 [par] Modify `_dict_to_book` in `json_book_repository.py` to raise `DomainError` on malformed data instead of returning `None` (~50)
-- [ ] 2.5 [par] Extend `test_book_use_cases.py` — add test cases: `validator=None` (existing), `validator=mock_pass`, `validator=mock_fail` (~80)
-- [ ] 2.6 [par] Create `test_schemas.py` — Pydantic `BookPayload` rejects empty/malformed, accepts valid data (~40)
-- [ ] 2.7 [seq] Run `pytest` — all tests green, existing behavior preserved
+- [x] 2.1 [seq] Add `validator: Validator[Book] | None = None` to `create_book`, `update_book`, `replace_book`; call `.validate()` before repo, raise `DomainError` on failure (~100)
+- [x] 2.2 [par] Add `@field_validator` to `BookPayload` in `schemas.py` — reject empty name/author+whitespace, malformed URL (~25)
+- [x] 2.3 [seq] Catch `ValidationError` in `routers/books.py` → HTTP 422 with `{"detail": [{"field","message"}]}` (~30)
+- [x] 2.4 [par] Modify `_dict_to_book` in `json_book_repository.py` to raise `DomainError` on malformed data instead of returning `None` (~50)
+- [x] 2.5 [par] Extend `test_book_use_cases.py` — add test cases: `validator=None` (existing), `validator=mock_pass`, `validator=mock_fail` (~80)
+- [x] 2.6 [par] Create `test_schemas.py` — Pydantic `BookPayload` rejects empty/malformed, accepts valid data (~40)
+- [x] 2.7 [seq] Run `pytest` — all tests green, existing behavior preserved
 
 ## PR 3: SRP Split (~280 lines)
 

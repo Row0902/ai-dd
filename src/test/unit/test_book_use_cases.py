@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import builtins
 
+import pytest
+
 from application.use_cases.book_use_case import (
     create_book,
     delete_book,
@@ -14,7 +16,9 @@ from application.use_cases.book_use_case import (
     update_book,
 )
 from domain.entities import Book
+from domain.exceptions import DomainError, ValidationError
 from domain.repositories import BookRepository
+from domain.validators.protocol import Validator
 
 
 class InMemoryBookRepository(BookRepository):
@@ -169,3 +173,114 @@ class TestBookUseCases:
         """Delete returns False when id is not found."""
         repo = InMemoryBookRepository()
         assert delete_book(repo, "missing") is False
+
+
+class _PassValidator(Validator[Book]):
+    """Mock validator that always passes."""
+
+    def validate(self, entity: Book) -> list[ValidationError]:
+        return []
+
+
+class _FailValidator(Validator[Book]):
+    """Mock validator that always fails with one error."""
+
+    def __init__(self, field: str = "name", message: str = "invalid") -> None:
+        self._field = field
+        self._message = message
+
+    def validate(self, entity: Book) -> list[ValidationError]:
+        return [ValidationError(field=self._field, message=self._message)]
+
+
+class TestBookUseCasesWithValidator:
+    """Tests for use case functions with validator injection."""
+
+    def test_create_book_with_passing_validator_succeeds(self) -> None:
+        """Create succeeds when validator returns no errors."""
+        repo = InMemoryBookRepository()
+        created = create_book(
+            repo, name="Clean Code", author="Robert", validator=_PassValidator()
+        )
+        assert created.name == "Clean Code"
+        assert repo.get(created.id) is not None
+
+    def test_create_book_with_failing_validator_raises_domain_error(self) -> None:
+        """Create raises DomainError when validator returns errors."""
+        repo = InMemoryBookRepository()
+        with pytest.raises(DomainError):
+            create_book(
+                repo,
+                name="X",
+                validator=_FailValidator(field="name", message="too short"),
+            )
+        # Book must NOT be persisted
+        assert repo.list() == []
+
+    def test_create_book_with_validator_none_preserves_behavior(self) -> None:
+        """Create with validator=None works like before (no validation)."""
+        repo = InMemoryBookRepository()
+        created = create_book(repo, name="Test", validator=None)
+        assert created.name == "Test"
+
+    def test_update_book_with_passing_validator_succeeds(self) -> None:
+        """Update succeeds when validator returns no errors."""
+        repo = InMemoryBookRepository()
+        created = repo.create(Book(id="", name="Old", author="A"))
+        updated = update_book(repo, created.id, name="New", validator=_PassValidator())
+        assert updated is not None
+        assert updated.name == "New"
+
+    def test_update_book_with_failing_validator_raises_domain_error(self) -> None:
+        """Update raises DomainError when validator returns errors."""
+        repo = InMemoryBookRepository()
+        created = repo.create(Book(id="", name="Old", author="A"))
+        with pytest.raises(DomainError):
+            update_book(
+                repo,
+                created.id,
+                name="Bad",
+                validator=_FailValidator(field="name", message="invalid"),
+            )
+        # Original must be unchanged
+        original = repo.get(created.id)
+        assert original is not None
+        assert original.name == "Old"
+
+    def test_update_book_missing_with_validator_returns_none(self) -> None:
+        """Update returns None for missing book even with validator."""
+        repo = InMemoryBookRepository()
+        result = update_book(repo, "missing", name="X", validator=_PassValidator())
+        assert result is None
+
+    def test_replace_book_with_passing_validator_succeeds(self) -> None:
+        """Replace succeeds when validator returns no errors."""
+        repo = InMemoryBookRepository()
+        created = repo.create(Book(id="", name="Old"))
+        replaced = replace_book(
+            repo, created.id, name="New", validator=_PassValidator()
+        )
+        assert replaced is not None
+        assert replaced.name == "New"
+
+    def test_replace_book_with_failing_validator_raises_domain_error(self) -> None:
+        """Replace raises DomainError when validator returns errors."""
+        repo = InMemoryBookRepository()
+        created = repo.create(Book(id="", name="Old"))
+        with pytest.raises(DomainError):
+            replace_book(
+                repo,
+                created.id,
+                name="Bad",
+                validator=_FailValidator(field="name", message="invalid"),
+            )
+        # Original must be unchanged
+        original = repo.get(created.id)
+        assert original is not None
+        assert original.name == "Old"
+
+    def test_replace_book_missing_with_validator_returns_none(self) -> None:
+        """Replace returns None for missing book even with validator."""
+        repo = InMemoryBookRepository()
+        result = replace_book(repo, "missing", name="X", validator=_PassValidator())
+        assert result is None

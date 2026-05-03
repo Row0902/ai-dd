@@ -8,7 +8,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from domain.entities import Book
+from domain.exceptions import DomainError
 from infrastructure.json_book_repository import JsonBookRepository
 
 
@@ -70,3 +73,51 @@ class TestJsonBookRepository:
         path.write_text(json.dumps({"x": 1}), encoding="utf-8")
         repo = JsonBookRepository(path)
         assert repo.list() == []
+
+
+class TestDictToBook:
+    """Tests for _dict_to_book raising DomainError on malformed data."""
+
+    def test_missing_id_raises_domain_error(self) -> None:
+        """A dict with no id field raises DomainError."""
+        with pytest.raises(DomainError):
+            JsonBookRepository._dict_to_book({"name": "Book"})
+
+    def test_missing_name_raises_domain_error(self) -> None:
+        """A dict with no name field raises DomainError."""
+        with pytest.raises(DomainError):
+            JsonBookRepository._dict_to_book({"id": "123"})
+
+    def test_non_string_id_raises_domain_error(self) -> None:
+        """A dict with non-string id raises DomainError."""
+        with pytest.raises(DomainError):
+            JsonBookRepository._dict_to_book({"id": 123, "name": "Book"})
+
+    def test_non_string_name_raises_domain_error(self) -> None:
+        """A dict with non-string name raises DomainError."""
+        with pytest.raises(DomainError):
+            JsonBookRepository._dict_to_book({"id": "123", "name": 42})
+
+    def test_valid_dict_returns_book(self) -> None:
+        """A well-formed dict returns a valid Book."""
+        book = JsonBookRepository._dict_to_book(
+            {"id": "abc", "name": "Clean Code", "author": "Bob"}
+        )
+        assert book.id == "abc"
+        assert book.name == "Clean Code"
+        assert book.author == "Bob"
+
+    def test_malformed_entries_skipped_in_list(self, tmp_path: Path) -> None:
+        """Malformed entries in JSON file are silently skipped during list."""
+        path = tmp_path / "library.json"
+        data = [
+            {"id": "1", "name": "Good Book"},
+            {"name": "Missing ID"},  # malformed — no id
+            {"id": "2", "name": "Another Good Book"},
+        ]
+        path.write_text(json.dumps(data), encoding="utf-8")
+        repo = JsonBookRepository(path)
+        books = repo.list()
+        assert len(books) == 2
+        assert books[0].name == "Good Book"
+        assert books[1].name == "Another Good Book"

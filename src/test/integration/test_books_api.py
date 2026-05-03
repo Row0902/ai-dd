@@ -108,3 +108,31 @@ class TestBooksApi:
 
         missing = client.get(f"/books/{created['id']}")
         assert missing.status_code == 404
+
+    def test_post_empty_name_returns_422(self, tmp_path: Path) -> None:
+        """POST /books rejects empty name with 422."""
+        client = _client_with_data_file(tmp_path)
+        resp = client.post(
+            "/books",
+            json={"name": "", "author": "Bob", "url": "https://example.com"},
+        )
+        assert resp.status_code == 422
+
+    def test_post_whitespace_name_returns_422(self, tmp_path: Path) -> None:
+        """POST /books rejects whitespace-only name with 422."""
+        client = _client_with_data_file(tmp_path)
+        resp = client.post("/books", json={"name": "   "})
+        assert resp.status_code == 422
+
+    def test_post_malformed_url_returns_422(self, tmp_path: Path) -> None:
+        """POST /books rejects malformed URL with 422."""
+        client = _client_with_data_file(tmp_path)
+        resp = client.post("/books", json={"name": "Book", "url": "not-a-url"})
+        assert resp.status_code == 422
+
+    def test_put_empty_name_returns_422(self, tmp_path: Path) -> None:
+        """PUT /books rejects empty name with 422."""
+        client = _client_with_data_file(tmp_path)
+        created = client.post("/books", json={"name": "Old"}).json()
+        resp = client.put(f"/books/{created['id']}", json={"name": "", "author": "Bob"})
+        assert resp.status_code == 422
