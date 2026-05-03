@@ -1,11 +1,10 @@
-# Re-Verification Report — PR 1: Domain Infrastructure (Post-Fix)
+# Verification Report — PR 2: Integration Layer
 
 **Change**: `polymorphic-validation`
-**Version**: PR 1 only — Domain infrastructure (exceptions, validators, value objects, entity)
+**Version**: PR 2 only — Integration layer (use cases, schemas, repository, router)
 **Mode**: Strict TDD
 **Date**: 2026-05-03
 **Verifier**: sdd-verify
-**Type**: Re-verification after 3 warning fixes
 
 ---
 
@@ -13,70 +12,18 @@
 
 | Metric | Value |
 |--------|-------|
-| Tasks total | 10 |
-| Tasks complete | 10 |
+| Tasks total | 7 |
+| Tasks complete | 7 |
 | Tasks incomplete | 0 |
 
-All PR 1 tasks are marked complete in the apply-progress artifact:
-- ✅ 1.1 `src/domain/exceptions.py`
-- ✅ 1.2 `src/domain/validators/__init__.py` + `protocol.py`
-- ✅ 1.3 Concrete validators (`book_name.py`, `book_author.py`, `book_url.py`)
-- ✅ 1.4 `composite.py`
-- ✅ 1.5 Value Objects (`BookName`, `BookAuthor`, `BookUrl`)
-- ✅ 1.6 Modified `entities.py`
-- ✅ 1.7 `test_validators.py` (17 tests)
-- ✅ 1.8 `test_value_objects.py` (25 tests)
-- ✅ 1.9 Composite validator tests (included in `test_validators.py`)
-- ✅ 1.10 All tests pass (91/91 green)
-- ✅ 1.11 ruff check + format: clean
-- ✅ 1.12 Persistence: Engram + OpenSpec updated
-
----
-
-## Previous Warnings Resolution
-
-### Warning 1: `Book.__post_init__` exceeded 20 lines
-
-**Status**: ✅ **RESOLVED**
-
-- **Previous**: `__post_init__` was 24 lines.
-- **Current**: Replaced with custom `__init__` (5 code lines, 6 docstring lines) plus three `@property` accessors (3 lines each).
-- **Verification**:
-  - `Book.__init__` body (lines 50–55): 5 executable lines
-  - `Book.name` property (lines 62–64): 3 lines
-  - `Book.author` property (lines 67–69): 3 lines
-  - `Book.url` property (lines 72–74): 3 lines
-  - All methods are well under the 20-line limit.
-
-### Warning 2: `ValidationError` not frozen
-
-**Status**: ✅ **RESOLVED**
-
-- **Previous**: `ValidationError` used `@dataclass(eq=True)` without documenting why `frozen=True` was omitted.
-- **Current**: Docstring explicitly documents the constraint:
-  > *PERMANENT CONSTRAINT — NOT frozen:*
-  > *Python 3.14+ frozen dataclasses disallow `__setattr__` entirely, but `Exception` needs to set `__traceback__` during propagation at the C level. Using `frozen=True` on an Exception subclass causes a runtime `AttributeError` when the exception is raised.*
-- **Verification**: The reasoning is technically accurate — `Exception.__setattr__` is invoked by CPython during traceback assignment. The class achieves value semantics via `eq=True` + manual `__hash__`.
-
-### Warning 3: Book entity stored strings instead of VO instances
-
-**Status**: ✅ **RESOLVED**
-
-- **Previous**: `Book.name` stored a plain `str`; VOs were constructed in `__post_init__` but discarded after extracting `.value`.
-- **Current**:
-  - Internal fields are VO types:
-    - `_name: BookName = field(init=False)`
-    - `_author: BookAuthor | None = field(init=False, default=None)`
-    - `_url: BookUrl | None = field(init=False, default=None)`
-  - Public `@property` accessors return strings for backward compatibility:
-    - `name` → `self._name.value`
-    - `author` → `self._author.value if self._author else ""`
-    - `url` → `self._url.value if self._url else ""`
-- **Verification**:
-  - `isinstance(book.name, str)` is `True` (`test_domain_entities.py::test_book_field_types`)
-  - VO validation happens eagerly on construction (`test_domain_entities.py::test_empty_name_raises_validation_error`)
-  - `_author` and `_url` are `None` when empty strings are passed (`test_domain_entities.py::test_empty_author_allowed_default`, `test_empty_url_allowed_default`)
-  - Consumers see the same string API; internal structure composes VOs.
+All PR 2 tasks are marked complete in the apply-progress artifact:
+- ✅ 2.1 Add `validator` param to `create_book`, `update_book`, `replace_book`; call `.validate()` before repo, raise `DomainError` on failure
+- ✅ 2.2 Add `@field_validator` to `BookPayload` in `schemas.py` — reject empty/whitespace name, malformed URL
+- ✅ 2.3 Catch `DomainError` in app (`main.py`) → HTTP 422 with structured detail
+- ✅ 2.4 Modify `_dict_to_book` in `json_book_repository.py` to raise `DomainError` on malformed data
+- ✅ 2.5 Extend `test_book_use_cases.py` — 9 new tests for validator injection
+- ✅ 2.6 Create `test_schemas.py` — 7 Pydantic validation tests
+- ✅ 2.7 Full pytest: 117/117 passing, ruff clean, ty clean
 
 ---
 
@@ -84,36 +31,34 @@ All PR 1 tasks are marked complete in the apply-progress artifact:
 
 **Build**: ✅ Passed
 ```
-ruff check src/domain/ src/test/ → All checks passed!
-ruff format --check src/domain/ src/test/ → 25 files already formatted
+ruff check src/ → All checks passed!
+ruff format --check src/ → 40 files already formatted
+ty check src/ → All checks passed!
 ```
 
-**Tests**: ✅ 91 passed / ❌ 0 failed / ⚠️ 0 skipped
+**Tests**: ✅ 117 passed / ❌ 0 failed / ⚠️ 0 skipped
 ```
-src/test/integration/test_books_api.py ......
-src/test/unit/test_book_use_cases.py ..........
+src/test/integration/test_books_api.py ..........
+src/test/unit/test_book_use_cases.py ...................
+src/test/unit/test_composite_validator.py ....
 src/test/unit/test_domain_entities.py ................
 src/test/unit/test_exceptions.py ..........
-src/test/unit/test_json_book_repository.py .......
-src/test/unit/test_validators.py .................
+src/test/unit/test_json_book_repository.py .............
+src/test/unit/test_schemas.py .......
+src/test/unit/test_validators.py .............
 src/test/unit/test_value_objects.py .........................
 ```
 
-**Coverage**: 95% domain average
-| File | Line % | Branch % | Uncovered | Rating |
-|------|--------|----------|-----------|--------|
-| `src/domain/entities.py` | 100% | — | — | ✅ Excellent |
-| `src/domain/exceptions.py` | 88% | — | L34 (`__str__`) | ✅ Excellent |
-| `src/domain/validators/book_author.py` | 89% | — | L18 (error append) | ✅ Excellent |
-| `src/domain/validators/book_name.py` | 82% | — | L15, L21 (error appends) | ✅ Excellent |
-| `src/domain/validators/book_url.py` | 81% | — | L19–22, L25 (error appends) | ✅ Excellent |
-| `src/domain/validators/composite.py` | 100% | — | — | ✅ Excellent |
-| `src/domain/validators/protocol.py` | 100% | — | — | ✅ Excellent |
-| `src/domain/value_objects/book_name.py` | 100% | — | — | ✅ Excellent |
-| `src/domain/value_objects/book_author.py` | 100% | — | — | ✅ Excellent |
-| `src/domain/value_objects/book_url.py` | 100% | — | — | ✅ Excellent |
+**Coverage**: 98% total / PR-2 changed files below
+| File | Line % | Branch % | Uncovered Lines | Rating |
+|------|--------|----------|-----------------|--------|
+| `src/application/use_cases/book_use_case.py` | 100% | — | — | ✅ Excellent |
+| `src/api/schemas.py` | 100% | — | — | ✅ Excellent |
+| `src/api/routers/books.py` | 92% | — | L88, L98, L102 | ✅ Excellent |
+| `src/main.py` | 75% | — | L33-37, L42, L51-53 | ⚠️ Acceptable |
+| `src/infrastructure/json_book_repository.py` | 99% | — | L92 | ✅ Excellent |
 
-Uncovered validator error paths are expected in PR 1: `Book` constructs VOs eagerly, so invalid data never reaches validators. These paths will be exercised in PR 2 when validators are injected into use cases operating on raw dicts.
+**Average changed file coverage**: 93%
 
 ---
 
@@ -121,12 +66,12 @@ Uncovered validator error paths are expected in PR 1: `Book` constructs VOs eage
 
 | Check | Result | Details |
 |-------|--------|---------|
-| TDD Evidence reported | ✅ | Task completion documented in apply-progress with test counts and pass status |
-| All tasks have tests | ✅ | 10/10 tasks have corresponding test files |
-| RED confirmed (tests exist) | ✅ | All test files exist in codebase |
-| GREEN confirmed (tests pass) | ✅ | All 91 tests pass on execution |
-| Triangulation adequate | ✅ | 17 validator cases, 25 VO cases, 16 entity cases, 10 exception cases |
-| Safety Net for modified files | ✅ | `test_domain_entities.py` shows existing tests still pass; `test_book_use_cases.py` unchanged and passing |
+| TDD Evidence reported | ✅ | Found TDD Cycle Evidence table in apply-progress |
+| All tasks have tests | ✅ | 4/4 task groups have test files |
+| RED confirmed (tests exist) | ✅ | `test_book_use_cases.py`, `test_schemas.py`, `test_books_api.py`, `test_json_book_repository.py` all exist |
+| GREEN confirmed (tests pass) | ✅ | All 117 tests pass on execution |
+| Triangulation adequate | ✅ | 9 use-case cases (3 per use case × pass/fail/none), 7 schema cases, 4 integration cases, 6 repo cases |
+| Safety Net for modified files | ✅ | 91/91, 100/100, 100/100 safety nets reported and verified |
 
 **TDD Compliance**: 6/6 checks passed
 
@@ -136,12 +81,12 @@ Uncovered validator error paths are expected in PR 1: `Book` constructs VOs eage
 
 | Layer | Tests | Files | Tools |
 |-------|-------|-------|-------|
-| Unit | 85 | 6 | pytest |
-| Integration | 6 | 1 | pytest + FastAPI TestClient |
+| Unit | 107 | 8 | pytest |
+| Integration | 10 | 1 | pytest + FastAPI TestClient |
 | E2E | 0 | 0 | — |
-| **Total** | **91** | **7** | |
+| **Total** | **117** | **9** | |
 
-All new tests for PR 1 are unit tests (exceptions, validators, value objects, domain entities).
+PR 2 new tests: 26 (9 use-case + 7 schema + 6 repo + 4 integration)
 
 ---
 
@@ -149,18 +94,13 @@ All new tests for PR 1 are unit tests (exceptions, validators, value objects, do
 
 | File | Line % | Branch % | Uncovered Lines | Rating |
 |------|--------|----------|-----------------|--------|
-| `src/domain/exceptions.py` | 88% | — | L34 | ✅ Excellent |
-| `src/domain/validators/book_author.py` | 89% | — | L18 | ✅ Excellent |
-| `src/domain/validators/book_name.py` | 82% | — | L15, L21 | ✅ Excellent |
-| `src/domain/validators/book_url.py` | 81% | — | L19–22, L25 | ✅ Excellent |
-| `src/domain/validators/composite.py` | 100% | — | — | ✅ Excellent |
-| `src/domain/validators/protocol.py` | 100% | — | — | ✅ Excellent |
-| `src/domain/value_objects/book_name.py` | 100% | — | — | ✅ Excellent |
-| `src/domain/value_objects/book_author.py` | 100% | — | — | ✅ Excellent |
-| `src/domain/value_objects/book_url.py` | 100% | — | — | ✅ Excellent |
-| `src/domain/entities.py` | 100% | — | — | ✅ Excellent |
+| `src/application/use_cases/book_use_case.py` | 100% | — | — | ✅ Excellent |
+| `src/api/schemas.py` | 100% | — | — | ✅ Excellent |
+| `src/api/routers/books.py` | 92% | — | L88, L98, L102 | ✅ Excellent |
+| `src/main.py` | 75% | — | L33-37, L42, L51-53 | ⚠️ Acceptable |
+| `src/infrastructure/json_book_repository.py` | 99% | — | L92 | ✅ Excellent |
 
-**Average changed file coverage**: 94%
+**Average changed file coverage**: 93%
 
 ---
 
@@ -168,63 +108,34 @@ All new tests for PR 1 are unit tests (exceptions, validators, value objects, do
 
 **Assertion quality**: ✅ All assertions verify real behavior
 
-Scan of all new and modified test files found no tautologies, ghost loops, smoke-test-only patterns, or mock-heavy tests. Structural assertions (`issubclass`, `isinstance(hash(...), int)`) directly validate spec requirements (exception hierarchy, hashability, protocol compliance).
+Scan of all new and modified test files found no tautologies, ghost loops, smoke-test-only patterns, or mock-heavy tests. All assertions verify concrete behavior (status codes, field values, exception types, repository state).
 
 ---
 
 ## Quality Metrics
 
 **Linter**: ✅ No errors / ✅ No warnings (ruff)
-**Type Checker**: ➖ Not available (no type checker configured in pyproject.toml)
+**Type Checker**: ✅ No errors (ty)
 
 ---
 
 ## Spec Compliance Matrix
 
-### Capability: polymorphic-validation
+### PR 2 Scope: Integration Layer
 
 | Requirement | Scenario | Test | Result |
 |-------------|----------|------|--------|
-| Validator Protocol | Protocol compliance | `test_validators.py > test_validator_is_abstract_base` | ✅ COMPLIANT |
-| Validator Protocol | Validation error returned | `test_validators.py > test_empty_name_returns_error` | ✅ COMPLIANT |
-| Concrete Validators | Valid name passes | `test_validators.py > test_valid_name_returns_empty_list` | ✅ COMPLIANT |
-| Concrete Validators | Empty name fails | `test_validators.py > test_empty_name_returns_error` | ✅ COMPLIANT |
-| Concrete Validators | Name too long fails | `test_validators.py > test_name_too_long_returns_error` | ✅ COMPLIANT |
-| Concrete Validators | Valid author passes | `test_validators.py > test_valid_author_returns_empty_list` | ✅ COMPLIANT |
-| Concrete Validators | Author too long fails | `test_validators.py > test_author_too_long_returns_error` | ✅ COMPLIANT |
-| Concrete Validators | Valid URL passes | `test_validators.py > test_valid_url_returns_empty_list` | ✅ COMPLIANT |
-| Concrete Validators | Malformed URL fails | `test_validators.py > test_malformed_url_returns_error` | ✅ COMPLIANT |
-| CompositeValidator | All validators pass | `test_validators.py > test_all_validators_pass_returns_empty` | ✅ COMPLIANT |
-| CompositeValidator | Multiple failures aggregated | `test_validators.py > test_multiple_failures_aggregated` | ✅ COMPLIANT |
-| Domain Error Types | DomainError raised | `test_exceptions.py > test_domain_error_can_be_raised` | ✅ COMPLIANT |
-| Domain Error Types | ValidationError dataclass structure | `test_exceptions.py > test_validation_error_has_field_and_message` | ✅ COMPLIANT |
-| Use Case Integration | Valid book creation succeeds | *Not in PR 1 scope* | ➖ N/A |
-| Use Case Integration | Invalid book creation raises DomainError | *Not in PR 1 scope* | ➖ N/A |
-| Repository Contract | Create with invalid data raises DomainError | *Not in PR 1 scope* | ➖ N/A |
-| Pydantic HTTP Boundary | Empty name rejected at HTTP layer | *Not in PR 1 scope* | ➖ N/A |
-| Pydantic HTTP Boundary | Valid payload passes through | *Not in PR 1 scope* | ➖ N/A |
+| Use Case Integration | Validator[Book] injected into create_book/update_book/replace_book | `test_book_use_cases.py::TestBookUseCasesWithValidator` (all 9 tests) | ✅ COMPLIANT |
+| Use Case Integration | validator=None preserves existing behavior | `test_book_use_cases.py::test_create_book_with_validator_none_preserves_behavior` + all original tests pass unchanged | ✅ COMPLIANT |
+| Use Case Integration | validator.validate() called before persistence | `test_book_use_cases.py::test_create_book_with_failing_validator_raises_domain_error` (repo empty after failure) | ✅ COMPLIANT |
+| Use Case Integration | DomainError raised on validation failure | `test_book_use_cases.py::test_create_book_with_failing_validator_raises_domain_error` | ✅ COMPLIANT |
+| Repository Contract | _dict_to_book raises DomainError on malformed data | `test_json_book_repository.py::TestDictToBook` (4 tests) | ✅ COMPLIANT |
+| Pydantic HTTP Boundary | empty name rejected at HTTP layer (422) | `test_schemas.py::test_empty_name_rejected` + `test_books_api.py::test_post_empty_name_returns_422` | ✅ COMPLIANT |
+| Pydantic HTTP Boundary | whitespace-only name rejected at HTTP layer (422) | `test_schemas.py::test_whitespace_only_name_rejected` + `test_books_api.py::test_post_whitespace_name_returns_422` | ✅ COMPLIANT |
+| Pydantic HTTP Boundary | malformed URL rejected at HTTP layer (422) | `test_schemas.py::test_malformed_url_rejected` + `test_books_api.py::test_post_malformed_url_returns_422` | ✅ COMPLIANT |
+| Pydantic HTTP Boundary | valid payload passes through | `test_schemas.py::test_valid_payload_accepted` + integration tests | ✅ COMPLIANT |
 
-### Capability: value-objects
-
-| Requirement | Scenario | Test | Result |
-|-------------|----------|------|--------|
-| BookName VO | Valid name constructed | `test_value_objects.py > test_valid_name_construction` | ✅ COMPLIANT |
-| BookName VO | Whitespace-only rejected | `test_value_objects.py > test_whitespace_only_raises` | ✅ COMPLIANT |
-| BookName VO | Empty string rejected | `test_value_objects.py > test_empty_string_raises` | ✅ COMPLIANT |
-| BookName VO | Name too long rejected | `test_value_objects.py > test_too_long_raises` | ✅ COMPLIANT |
-| BookName VO | Trimmed on construction | `test_value_objects.py > test_strips_whitespace` | ✅ COMPLIANT |
-| BookAuthor VO | Valid author constructed | `test_value_objects.py > test_valid_author_construction` | ✅ COMPLIANT |
-| BookAuthor VO | Empty string rejected | `test_value_objects.py > test_empty_string_raises` | ✅ COMPLIANT |
-| BookAuthor VO | Author too long rejected | `test_value_objects.py > test_too_long_raises` | ✅ COMPLIANT |
-| BookUrl VO | Valid URL constructed | `test_value_objects.py > test_valid_url_construction` | ✅ COMPLIANT |
-| BookUrl VO | Malformed URL rejected | `test_value_objects.py > test_malformed_url_raises` | ✅ COMPLIANT |
-| BookUrl VO | URL too long rejected | `test_value_objects.py > test_too_long_raises` | ✅ COMPLIANT |
-| VO Immutability | Two equal VOs have same hash | `test_value_objects.py > test_same_value_same_hash` | ✅ COMPLIANT |
-| VO Immutability | Modification raises AttributeError | `test_value_objects.py > test_immutability` | ✅ COMPLIANT |
-| Book Entity Integrates VOs | Book constructed with valid VOs | `test_domain_entities.py > test_book_creation_full` | ✅ COMPLIANT |
-| Book Entity Integrates VOs | Book construction fails with invalid VO | `test_domain_entities.py > test_empty_name_raises_validation_error` | ✅ COMPLIANT |
-
-**Compliance summary**: 25/25 PR-1 scenarios compliant (15 polymorphic-validation + 10 value-objects)
+**Compliance summary**: 9/9 PR-2 scenarios compliant
 
 ---
 
@@ -232,15 +143,15 @@ Scan of all new and modified test files found no tautologies, ghost loops, smoke
 
 | Requirement | Status | Notes |
 |------------|--------|-------|
-| `Validator[T]` ABC exists | ✅ Implemented | `protocol.py` — `Validator[T](ABC)` with abstract `validate` method returning `list[ValidationError]` |
-| 3 concrete validators, one per file | ✅ Implemented | `book_name.py` (24 lines), `book_author.py` (21 lines), `book_url.py` (26 lines) |
-| `CompositeValidator` aggregates flat list | ✅ Implemented | `composite.py` — iterates all validators, extends errors into single list |
-| `DomainError` base exception | ✅ Implemented | `exceptions.py` — inherits from `Exception` |
-| `ValidationError` dataclass | ✅ Implemented | `exceptions.py` — `@dataclass(eq=True)` with `field: str`, `message: str`, manual `__hash__`, documented permanent constraint |
-| 3 Value Objects exist | ✅ Implemented | `book_name.py`, `book_author.py`, `book_url.py` — all `@dataclass(frozen=True)` |
-| VOs self-validate on construction | ✅ Implemented | All VOs raise `ValidationError` in `__post_init__` |
-| VOs immutable, hashable, comparable | ✅ Implemented | `frozen=True` provides `__eq__` and `__hash__`; immutability verified by tests |
-| Book entity composes VOs | ✅ Implemented | `Book` stores `_name: BookName`, `_author: BookAuthor \| None`, `_url: BookUrl \| None`; exposes strings via `@property` |
+| `validator: Validator[Book] \| None = None` added to create_book | ✅ Implemented | `book_use_case.py` L56-65 |
+| `validator: Validator[Book] \| None = None` added to update_book | ✅ Implemented | `book_use_case.py` L98-108 |
+| `validator: Validator[Book] \| None = None` added to replace_book | ✅ Implemented | `book_use_case.py` L147-157 |
+| `_validate_or_raise` helper validates before persistence | ✅ Implemented | `book_use_case.py` L205-219; called before all repo operations |
+| `@field_validator("name")` rejects empty/whitespace | ✅ Implemented | `schemas.py` L19-25 |
+| `@field_validator("url")` rejects malformed URLs | ✅ Implemented | `schemas.py` L27-36 |
+| Exception handler returns HTTP 422 with structured detail | ✅ Implemented | `main.py` L30-37 returns `{"detail": [{"field", "message"}]}` |
+| `_dict_to_book` raises DomainError on malformed data | ✅ Implemented | `json_book_repository.py` L145-175; raises for missing/invalid id and name |
+| `_load_books_unlocked` catches DomainError and logs | ✅ Implemented | `json_book_repository.py` L109-118; graceful degradation for corrupt JSON entries |
 
 ---
 
@@ -248,15 +159,25 @@ Scan of all new and modified test files found no tautologies, ghost loops, smoke
 
 | Decision | Followed? | Notes |
 |----------|-----------|-------|
-| Validator Protocol vs functions/decorators | ✅ Yes | `Validator[T]` ABC chosen and implemented |
-| Error hierarchy: DomainError → ValidationError | ✅ Yes | Implemented as designed |
-| Composite: flat list, no nesting | ✅ Yes | `CompositeValidator` extends into single list, no short-circuit |
-| VO immutability: `@dataclass(frozen=True)` | ✅ Yes | All three VOs use `frozen=True` |
-| Validator injection: optional param, default None | ➖ N/A | Not implemented in PR 1 (scheduled for PR 2) |
-| Each validator in own file, ~10-15 lines, 1 public method | ✅ Yes | `validate` methods are 7–11 lines each. Files are 21–26 lines (design estimated 20–25) |
-| `BookUrlValidator` uses `urlparse` | ✅ Yes | Uses `urllib.parse.urlparse` |
+| Validator injection via optional param `validator: Validator[Book] \| None = None` | ✅ Yes | Implemented exactly as designed |
+| Flat composite used (no nesting) | ✅ Yes | `CompositeValidator` iterates flat list; `_validate_or_raise` uses single validator or composite |
+| DomainError raised (not ValidationError directly) | ✅ Yes | `_validate_or_raise` raises `errors[0]` which is a `ValidationError` subclass of `DomainError` |
+| HTTP 422 response format: `{"detail": [{"field": "...", "message": "..."}]}` | ✅ Yes | `main.py` exception handler produces exactly this shape |
+| Exception handler on FastAPI app (not APIRouter) | ⚠️ Deviated | Design File Changes table says router catches error, but FastAPI requires app-level handlers. Apply-progress documents this as a known framework constraint. Functionally equivalent. |
+| `_validate_or_raise` raises first error only | ⚠️ Deviated | Design code example shows `raise ValidationError(fields=errors)` as an option; implementation raises `errors[0]` only. Spec says "raises DomainError with validation errors" (plural). This limits error reporting to the first failure. |
 
-**Design compliance**: 6/7 followed, 1 N/A for PR 2
+**Design compliance**: 4/6 followed, 2 minor deviations (both functionally acceptable)
+
+---
+
+## Backward Compatibility
+
+| Check | Result | Details |
+|-------|--------|---------|
+| Existing tests pass without modification | ✅ Yes | All original tests from PR 1 still pass (117/117 total) |
+| validator=None (default) has zero behavioral change | ✅ Yes | `_validate_or_raise` returns early when `validator is None`; all existing use-case tests pass unchanged |
+| Router does not pass validator — defaults to None | ✅ Yes | `books.py` endpoints call use cases without `validator` kwarg, preserving pre-PR-2 behavior |
+| Pydantic validators only added to `BookPayload` — no endpoint signature changes | ✅ Yes | Endpoints continue to accept same payload shape; validation is additive |
 
 ---
 
@@ -264,8 +185,8 @@ Scan of all new and modified test files found no tautologies, ghost loops, smoke
 
 | Check | Result | Details |
 |-------|--------|---------|
-| All methods ≤ 20 lines | ✅ Yes | Longest method: `BookUrl.__post_init__` at 8 lines; `Book.__init__` body at 5 lines |
-| All files under 500 lines | ✅ Yes | Largest file: `src/domain/entities.py` at 74 lines |
+| All methods ≤ 20 lines | ✅ Yes | Longest method: `replace_book` at 12 executable lines; `_validate_or_raise` at 5 lines; all endpoint handlers ≤ 10 lines |
+| All files under 500 lines | ✅ Yes | Largest changed file: `book_use_case.py` at 219 lines; `json_book_repository.py` at 186 lines; `books.py` at 103 lines |
 
 ---
 
@@ -275,50 +196,65 @@ Scan of all new and modified test files found no tautologies, ghost loops, smoke
 None.
 
 ### WARNING (should fix):
-None.
+1. **`_validate_or_raise` raises only the first error, not all aggregated errors**
+   - **Location**: `src/application/use_cases/book_use_case.py` L218-219
+   - **Details**: `raise errors[0]` discards subsequent validation errors. The spec says "raises DomainError with validation errors" (plural), suggesting all errors should be reported. This limits the usefulness of `CompositeValidator` — users only see the first failure even when multiple fields are invalid.
+   - **Impact**: When using `CompositeValidator`, only the first validator's error is raised. The remaining errors are silently dropped.
+   - **Fix**: Aggregate errors into a single exception or introduce a `ValidationErrors` container exception that carries the full list.
+
+2. **Exception handler located in `main.py` instead of `books.py` router**
+   - **Location**: `src/main.py` L30-37
+   - **Details**: Design File Changes table specifies `src/api/routers/books.py` should catch `ValidationError → 422`. The handler is instead on the FastAPI app instance in `main.py`.
+   - **Impact**: Functionally equivalent — all routes benefit from the handler. But it deviates from the design's file-change plan.
+   - **Note**: Apply-progress documents this as a known FastAPI constraint (`APIRouter` cannot register exception handlers; only `FastAPI` app can).
 
 ### SUGGESTION (nice to have):
-1. **Validator error paths are unreachable in PR 1**
-   - `BookNameValidator`, `BookAuthorValidator`, and `BookUrlValidator` error-append branches are uncovered because `Book` constructs VOs eagerly, preventing invalid data from ever reaching validators.
-   - These paths will naturally be covered in PR 2 when validators are injected into use cases that may receive raw/unvalidated data.
+1. **Router could wire a default `CompositeValidator` into use cases**
+   - Currently the router never passes a validator, so domain validation is bypassed at the HTTP layer (only Pydantic validation runs). Wiring a default `CompositeValidator` would enable full domain validation for all HTTP requests without requiring callers to change.
+   - This is likely deferred to a future PR or left as an opt-in for direct use-case consumers.
 
-2. **`test_validators.py` could be split into `test_composite_validator.py`**
-   - Design originally planned a separate file; keeping composite tests in `test_validators.py` is acceptable but separation would improve maintainability.
+2. **`main.py` exception handler branch for non-ValidationError DomainError is uncovered**
+   - Line 35-36 (`detail = [{"field": "unknown", "message": str(exc)}]`) is never exercised by tests. Adding a test for a plain `DomainError` (non-ValidationError subclass) would bring coverage to 100%.
 
-3. **Type checker not configured**
-   - No `mypy`, `pyright`, or `ty` configuration found in `pyproject.toml`. Adding a type checker would strengthen static guarantees for the generic `Validator[T]` protocol.
+3. **Router endpoint `update_book` is missing from the router**
+   - The `books.py` router only has `POST`, `PUT`, `GET`, `DELETE`. There is no `PATCH` endpoint for `update_book` (partial update). This is pre-existing and not changed by PR 2, but means the `update_book` use case with validator is only testable via unit tests, not integration tests.
 
 ---
 
 ## Verdict
 
-**PASS**
+**PASS WITH WARNINGS**
 
-All three previous warnings are resolved. PR 1 implementation is structurally sound, all 91 tests pass, TDD discipline was followed, all spec scenarios within PR 1 scope are compliant, all methods are under the 20-line limit, all files are under 500 lines, and ruff is clean. The codebase is ready for PR 2 integration.
+PR 2 implementation is behaviorally correct, all 117 tests pass, TDD discipline was followed, and all spec scenarios within PR 2 scope are compliant. Backward compatibility is fully preserved — existing tests pass without modification and `validator=None` has zero behavioral change.
+
+Two WARNINGS are raised:
+1. `_validate_or_raise` raises only the first validation error, limiting `CompositeValidator` usefulness. This deviates from the spec's plural "validation errors" wording.
+2. Exception handler location deviates from the design's File Changes table (app-level vs router-level), though this is a documented FastAPI constraint.
+
+Neither warning blocks archive, but warning #1 should be addressed in PR 3 or a follow-up if full composite error aggregation is desired.
 
 ---
 
 ## Files Examined
 
-### Source (new/modified)
+### Source (PR 2 changed)
+- `src/application/use_cases/book_use_case.py` (219 lines, modified)
+- `src/api/schemas.py` (36 lines, modified)
+- `src/api/routers/books.py` (103 lines, modified)
+- `src/main.py` (53 lines, modified)
+- `src/infrastructure/json_book_repository.py` (186 lines, modified)
+
+### Source (PR 1 — referenced for context)
 - `src/domain/exceptions.py` (38 lines)
-- `src/domain/validators/__init__.py` (6 lines)
 - `src/domain/validators/protocol.py` (29 lines)
+- `src/domain/validators/composite.py` (39 lines)
 - `src/domain/validators/book_name.py` (24 lines)
 - `src/domain/validators/book_author.py` (21 lines)
 - `src/domain/validators/book_url.py` (26 lines)
-- `src/domain/validators/composite.py` (39 lines)
-- `src/domain/value_objects/__init__.py` (7 lines)
-- `src/domain/value_objects/book_name.py` (30 lines)
-- `src/domain/value_objects/book_author.py` (31 lines)
-- `src/domain/value_objects/book_url.py` (30 lines)
-- `src/domain/entities.py` (74 lines, modified)
+- `src/domain/entities.py` (74 lines)
 
-### Tests (new/modified)
-- `src/test/unit/test_exceptions.py` (69 lines, 10 tests)
-- `src/test/unit/test_validators.py` (189 lines, 17 tests)
-- `src/test/unit/test_value_objects.py` (159 lines, 25 tests)
-- `src/test/unit/test_domain_entities.py` (123 lines, 16 tests)
-- `src/test/unit/test_book_use_cases.py` (171 lines, 10 tests — existing, unchanged)
-- `src/test/unit/test_json_book_repository.py` (existing, unchanged)
-- `src/test/integration/test_books_api.py` (existing, unchanged)
+### Tests (PR 2 changed/new)
+- `src/test/unit/test_book_use_cases.py` (286 lines, modified — 9 new tests)
+- `src/test/unit/test_schemas.py` (61 lines, created — 7 tests)
+- `src/test/unit/test_json_book_repository.py` (123 lines, modified — 6 new tests)
+- `src/test/integration/test_books_api.py` (138 lines, modified — 4 new tests)

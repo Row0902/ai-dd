@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import replace
 
 from domain.entities import Book
+from domain.exceptions import AggregatedValidationError
 from domain.repositories import BookRepository
 from domain.validators.protocol import Validator
 
@@ -203,17 +204,25 @@ def delete_book(repo: BookRepository, book_id: str) -> bool:
 
 
 def _validate_or_raise(validator: Validator[Book] | None, draft: Book) -> None:
-    """Run validator on draft and raise DomainError if errors found.
+    """Run validator on draft and raise on errors.
+
+    A single ``ValidationError`` is raised directly for the common one-error
+    case.  Multiple errors (e.g. from a ``CompositeValidator``) are wrapped in
+    ``ValidationErrors`` so that every failure reaches the caller.
 
     Args:
         validator: Optional validator instance.
         draft: Book entity to validate.
 
     Raises:
-        DomainError: When validator returns one or more errors.
+        ValidationError: When a single validation rule fails.
+        AggregatedValidationError: When multiple validation rules fail.
     """
     if validator is None:
         return
     errors = validator.validate(draft)
-    if errors:
+    if not errors:
+        return
+    if len(errors) == 1:
         raise errors[0]
+    raise AggregatedValidationError(errors)

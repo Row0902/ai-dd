@@ -36,3 +36,33 @@ class ValidationError(DomainError):
     def __hash__(self) -> int:
         """Make ValidationError hashable based on field values."""
         return hash((self.field, self.message))
+
+
+class AggregatedValidationError(DomainError):
+    """Multiple aggregated field-level validation errors.
+
+    Raised when a ``CompositeValidator`` (or any multi-validator) collects
+    more than one error.  Carries the full list so that consumers — such as
+    the HTTP exception handler — can report every failure at once.
+
+    A single ``ValidationError`` is still raised directly for the common
+    one-error case, preserving backward compatibility with existing callers.
+
+    Attributes:
+        errors: The aggregated list of ``ValidationError`` instances
+            (guaranteed non-empty at construction time).
+    """
+
+    def __init__(self, errors: list[ValidationError]) -> None:
+        """Initialize with a non-empty list of validation errors.
+
+        Args:
+            errors: At least one ``ValidationError`` instance.
+
+        Raises:
+            ValueError: If ``errors`` is empty.
+        """
+        if not errors:
+            raise ValueError("AggregatedValidationError requires at least one error")
+        self.errors = errors
+        super().__init__(str(errors[0]))

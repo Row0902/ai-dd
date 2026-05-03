@@ -18,6 +18,7 @@ from application.use_cases.book_use_case import (
 from domain.entities import Book
 from domain.exceptions import DomainError, ValidationError
 from domain.repositories import BookRepository
+from domain.validators.composite import CompositeValidator
 from domain.validators.protocol import Validator
 
 
@@ -186,11 +187,25 @@ class _FailValidator(Validator[Book]):
     """Mock validator that always fails with one error."""
 
     def __init__(self, field: str = "name", message: str = "invalid") -> None:
+        """Initialize with the field and message for the error."""
         self._field = field
         self._message = message
 
     def validate(self, entity: Book) -> list[ValidationError]:
+        """Return a single validation error."""
         return [ValidationError(field=self._field, message=self._message)]
+
+
+class _MultiFailValidator(Validator[Book]):
+    """Mock validator that returns multiple errors."""
+
+    def __init__(self, errors: list[ValidationError]) -> None:
+        """Initialize with a list of errors to return."""
+        self._errors = errors
+
+    def validate(self, entity: Book) -> list[ValidationError]:
+        """Return multiple validation errors."""
+        return self._errors
 
 
 class TestBookUseCasesWithValidator:
@@ -284,3 +299,22 @@ class TestBookUseCasesWithValidator:
         repo = InMemoryBookRepository()
         result = replace_book(repo, "missing", name="X", validator=_PassValidator())
         assert result is None
+
+    def test_create_book_with_composite_validator_aggregates_all_errors(
+        self,
+    ) -> None:
+        """CompositeValidator with multiple failures raises all errors."""
+        repo = InMemoryBookRepository()
+        composite = CompositeValidator[Book](
+            validators=[
+                _FailValidator(field="name", message="name too short"),
+                _FailValidator(field="author", message="author required"),
+            ]
+        )
+        with pytest.raises(DomainError) as exc_info:
+            create_book(repo, name="X", validator=composite)
+        # Both errors must be accessible — not just the first one.
+        assert hasattr(exc_info.value, "errors")
+        assert len(exc_info.value.errors) == 2  # ty: ignore[invalid-argument-type]
+        fields = {e.field for e in exc_info.value.errors}  # ty: ignore[not-iterable]
+        assert fields == {"name", "author"}

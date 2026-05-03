@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 
 from api.dependencies import get_book_repo
 from api.routers.books import router as books_router
-from domain.exceptions import DomainError, ValidationError
+from domain.exceptions import AggregatedValidationError, DomainError, ValidationError
 from infrastructure.json_book_repository import JsonBookRepository
 
 DATA_FILE = Path(__file__).parent / "library.json"
@@ -29,8 +29,17 @@ def create_app(data_file: Path = DATA_FILE) -> FastAPI:
 
     @app.exception_handler(DomainError)
     async def domain_error_handler(request: Request, exc: DomainError) -> JSONResponse:
-        """Convert domain errors to HTTP 422 with structured detail."""
-        if isinstance(exc, ValidationError):
+        """Convert domain errors to HTTP 422 with structured detail.
+
+        Registered at the FastAPI **application** level (not router level)
+        because FastAPI exception handlers only take effect when added to the
+        app instance — router-level ``@router.exception_handler`` does not
+        exist in the current API.  Functionally equivalent to the design
+        intent.
+        """
+        if isinstance(exc, AggregatedValidationError):
+            detail = [{"field": e.field, "message": e.message} for e in exc.errors]
+        elif isinstance(exc, ValidationError):
             detail = [{"field": exc.field, "message": exc.message}]
         else:
             detail = [{"field": "unknown", "message": str(exc)}]
