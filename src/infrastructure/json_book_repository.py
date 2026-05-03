@@ -21,6 +21,12 @@ from typing import Any
 from domain.entities import Book
 from domain.exceptions import DomainError
 from domain.repositories import BookRepository
+from infrastructure.serializers.json_book_serializer import (
+    book_to_dict as _book_to_dict,
+)
+from infrastructure.serializers.json_book_serializer import (
+    dict_to_book as _dict_to_book_impl,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -111,14 +117,14 @@ class JsonBookRepository(BookRepository):
         books: list[Book] = []
         for item in data:
             try:
-                book = self._dict_to_book(item)
+                book = _dict_to_book_impl(item)
                 books.append(book)
             except DomainError:
                 logger.warning("Skipping malformed book entry: %s", item)
         return books
 
     def _save_books_unlocked(self, books: builtins.list[Book]) -> None:
-        self._save_raw([self._book_to_dict(b) for b in books])
+        self._save_raw([_book_to_dict(b) for b in books])
 
     def _load_raw(self) -> builtins.list[dict[str, Any]]:
         if not self._data_file.exists():
@@ -145,6 +151,8 @@ class JsonBookRepository(BookRepository):
     def _dict_to_book(item: dict[str, Any]) -> Book:
         """Convert a raw dict to a Book entity.
 
+        Delegates to :func:`infrastructure.serializers.json_book_serializer.dict_to_book`.
+
         Args:
             item: Dictionary with book data from JSON storage.
 
@@ -154,33 +162,12 @@ class JsonBookRepository(BookRepository):
         Raises:
             DomainError: When required fields are missing or have wrong types.
         """
-        book_id = item.get("id")
-        name = item.get("name")
-        if not isinstance(book_id, str):
-            raise DomainError("Book entry missing or invalid 'id' field")
-        if not isinstance(name, str):
-            raise DomainError("Book entry missing or invalid 'name' field")
-
-        author = item.get("author")
-        description = item.get("description")
-        url = item.get("url")
-        content = item.get("content")
-        return Book(
-            id=book_id,
-            name=name,
-            author=author if isinstance(author, str) else "",
-            description=description if isinstance(description, str) else "",
-            url=url if isinstance(url, str) else "",
-            content=content if isinstance(content, str) else "",
-        )
+        return _dict_to_book_impl(item)
 
     @staticmethod
     def _book_to_dict(book: Book) -> dict[str, str]:
-        return {
-            "id": book.id,
-            "name": book.name,
-            "author": book.author,
-            "description": book.description,
-            "url": book.url,
-            "content": book.content,
-        }
+        """Convert a Book entity to a dict.
+
+        Delegates to :func:`infrastructure.serializers.json_book_serializer.book_to_dict`.
+        """
+        return _book_to_dict(book)

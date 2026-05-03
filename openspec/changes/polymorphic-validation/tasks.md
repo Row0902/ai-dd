@@ -47,7 +47,7 @@ Chained PRs recommended: Yes
 
 ## PR 3: SRP Split (~280 lines)
 
-- [ ] 3.1 [par] Split `book_use_case.py` into 6 files: `create_book.py`, `read_book.py`, `update_book.py`, `replace_book.py`, `delete_book.py`, `search_books.py` — pure refactoring, no behavior change (~120)
-- [ ] 3.2 [par] Extract `JsonSerializer` from `json_book_repository.py` into `src/infrastructure/serializer.py` with `book_to_dict`/`dict_to_book` methods (~100)
-- [ ] 3.3 [seq] Update imports in `routers/books.py` and `test_book_use_cases.py` to new module paths (~40)
-- [ ] 3.4 [seq] Run `pytest` — verify zero behavioral changes, all tests pass
+- [x] 3.1 [par] Split `book_use_case.py` into 7 files: `create_book.py`, `read_book.py`, `list_books.py`, `search_books.py`, `update_book.py`, `replace_book.py`, `delete_book.py` — pure refactoring, no behavior change (~120)
+- [x] 3.2 [par] Extract `JsonSerializer` from `json_book_repository.py` into `src/infrastructure/serializers/json_book_serializer.py` with `book_to_dict`/`dict_to_book` functions (~100)
+- [x] 3.3 [seq] Update imports in `routers/books.py` and `test_book_use_cases.py` to new module paths (~40)
+- [x] 3.4 [seq] Run `pytest` — verify zero behavioral changes, all tests pass (118/118 green)

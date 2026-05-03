@@ -13,14 +13,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from api.dependencies import get_book_repo
 from api.mappers import book_to_dict
 from api.schemas import BookPayload
-from application.use_cases.book_use_case import (
-    create_book,
-    delete_book,
-    get_book,
-    get_books_by_name,
-    list_books,
-    replace_book,
-)
+from application.use_cases.create_book import create_book
+from application.use_cases.delete_book import delete_book
+from application.use_cases.list_books import list_books
+from application.use_cases.read_book import get_book
+from application.use_cases.replace_book import replace_book
+from application.use_cases.search_books import get_books_by_name
 from domain.repositories import BookRepository
 
 router = APIRouter()
