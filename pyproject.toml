@@ -33,7 +33,7 @@ ignore = ["D203", "D213", "D104"]
 convention = "google"
 
 [tool.ty.environment]
-python-version = "3.14"
+python-version = "3.13"
 root = ["./src"]
 
 [tool.ty.src]
@@ -45,4 +45,4 @@ output-format = "concise"
 [tool.pytest.ini_options]
 addopts = "-ra -q"
 pythonpath = ["src"]
-testpaths = ["tests"]
+testpaths = ["src/test"]
