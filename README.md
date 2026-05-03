@@ -1,449 +1,420 @@
-## 📚 Biblioteca Digital - AI Driven Development
+# Biblioteca Digital — Kata de Refactorización
 
-Aplicación educativa FastAPI diseñada para enseñar refactorización asistida por IA. Implementa deliberadamente malas prácticas (monolito, I/O bloqueante, sin capas) como punto de partida para aplicar Clean Architecture y SOLID.
+> Aplicación educativa FastAPI diseñada como **kata de refactorización**. Parte de un monolito intencionalmente imperfecto y evoluciona hacia Clean Architecture + SOLID mediante asistencia de IA.
 
-## 🎯 Objetivo del proyecto
+---
 
-Debes refactorizar la app aplicando Clean Architecture, Clean Code y principios SOLID. Tu meta es separar la logica de negocio de la persistencia, reemplazar el archivo JSON por una base de datos (SQLite o PostgreSQL) e integrar pruebas automatizadas.
+## Tabla de contenidos
 
-## 📋 Dependencias y herramientas
+- [Inicio rápido](#inicio-rápido)
+- [Qué vas a aprender](#qué-vas-a-aprender)
+- [El punto de partida](#el-punto-de-partida)
+- [La consigna](#la-consigna)
+- [Hoja de ruta paso a paso](#hoja-de-ruta-paso-a-paso)
+- [Arquitectura objetivo](#arquitectura-objetivo)
+- [Testing](#testing)
+- [Herramientas](#herramientas)
+- [Entrega](#entrega)
+- [FAQ y troubleshooting](#faq-y-troubleshooting)
 
-Este proyecto se creo con **uv**. Incluyo `requirements.txt` para quienes no usan uv.
+---
 
-**Runtime:**
-- [FastAPI](https://fastapi.tiangolo.com/) - framework web moderno
-- [SQLModel](https://sqlmodel.tiangolo.com/#requirements) o [SQLAlchemy](https://docs.sqlalchemy.org/en/20/) - ORM para la base de datos
-  - SQLModel combina Pydantic + SQLAlchemy
-  - SQLAlchemy se instala automaticamente con SQLModel
-  - Puedes usar cualquiera de los dos
+## Inicio rápido
 
-**Desarrollo:**
-- [pytest](https://docs.pytest.org/en/stable/) - testing framework
-- [ruff](https://docs.astral.sh/ruff/) - linter y formateador ultrarapido
-- [ty](https://docs.astral.sh/ty/) - type checker
-
-Ruff y Ty son **opcionales**. Si decides no usarlos, puedes eliminarlos o comentarlos en `pyproject.toml` y `requirements.txt`.
-
-**Gestor de dependencias:**
-- [uv](https://docs.astral.sh/uv/) - gestor de paquetes ultrarapido
-
-## 📊 Diagrama de la aplicacion (estado actual)
-
-```mermaid
-flowchart TD
-  Client[Cliente HTTP]
-  Swagger[Swagger UI<br/>localhost:8000/docs]
-  ReDoc[ReDoc<br/>localhost:8000/redoc]
-  
-  Client -->|GET /books| FastAPI[FastAPI App<br/>src/main.py]
-  Client -->|GET /books/:id| FastAPI
-  Client -->|GET /books/by-name/:name| FastAPI
-  Client -->|POST /books| FastAPI
-  Client -->|PUT /books/:id| FastAPI
-  Client -->|DELETE /books/:id| FastAPI
-  
-  FastAPI -->|lectura/escritura| JSON[library.json<br/>I/O bloqueante]
-  FastAPI -->|documentacion| Swagger
-  FastAPI -->|documentacion| ReDoc
-  
-  style JSON fill:#f9f,stroke:#333,stroke-width:2px
-  style Client fill:#e1f5ff,stroke:#01579b
-  style FastAPI fill:#fff3e0,stroke:#e65100,stroke-width:2px
-  style Swagger fill:#f3e5f5,stroke:#4a148c
-  style ReDoc fill:#f3e5f5,stroke:#4a148c
-```
-
-**Diagrama esperado despues del refactor (con ORM y BD):**
-
-```mermaid
-flowchart TD
-  Client[Cliente HTTP]
-  Swagger[Swagger UI<br/>localhost:8000/docs]
-  
-  Client -->|HTTP Requests| FastAPI[FastAPI App<br/>src/main.py]
-  FastAPI -->|documentacion| Swagger
-  
-  FastAPI -->|Servicios| Domain[Capa de Dominio<br/>src/domain/]
-  Domain -->|Repositorio| Repository[Capa de Persistencia<br/>src/infrastructure/]
-  Repository -->|SQLModel/SQLAlchemy ORM| Database[(SQLite/PostgreSQL)]
-  
-  Tests[Pruebas pytest<br/>src/test/]
-  Tests -.->|unit tests| Domain
-  Tests -.->|integration tests| Repository
-  
-  style Database fill:#4caf50,stroke:#1b5e20,stroke-width:2px,color:#fff
-  style Domain fill:#2196f3,stroke:#0d47a1,stroke-width:2px,color:#fff
-  style Repository fill:#ff9800,stroke:#e65100,stroke-width:2px,color:#fff
-  style Tests fill:#9c27b0,stroke:#4a148c,stroke-width:2px,color:#fff
-  style FastAPI fill:#fff3e0,stroke:#e65100,stroke-width:2px
-```
-
-## 📁 Estructura actual
-
-- `src/main.py` — app FastAPI (unico archivo)
-- `src/library.json` — almacenamiento persistente (se crea al ejecutar la app)
-- `src/test/` — carpeta para pruebas (vacia, la llenarás durante el refactor)
-
-## 🏗️ Estructura esperada post-refactor (Clean Architecture)
-
-Puedes organizar tu proyecto de la siguiente manera como referencia:
-
-```
-proyecto/
-├── src/
-│   ├── domain/              # Logica de negocio (entidades, interfaces)
-│   │   ├── models.py        # Entidades de dominio
-│   │   └── services.py      # Servicios de negocio
-│   ├── infrastructure/      # Persistencia y configuracion externa
-│   │   ├── database.py      # Conexion a BD
-│   │   └── repositories.py  # Implementacion de repositorios
-│   ├── api/                 # Endpoints FastAPI
-│   │   ├── routes.py        # Rutas
-│   │   └── schemas.py       # Esquemas Pydantic
-│   ├── test/                # Pruebas
-│   │   ├── unit/            # Pruebas unitarias
-│   │   ├── integration/     # Pruebas de integracion
-│   │   └── conftest.py      # Fixtures compartidas
-│   └── main.py              # Entrada de la app
-├── .env                     # Variables de entorno (no commitar)
-├── .env.example             # Plantilla de .env
-├── pyproject.toml
-└── requirements.txt
-```
-
-## 🚀 Instrucciones
-
-### ✔️ Verificacion inicial
-
-Antes de comenzar, verifica que la app actual funciona:
+Ejecuta la app en **3 comandos** para ver el estado inicial:
 
 ```bash
-# Con uv
-uv run fastapi dev src/main.py
-
-# O con pip (tras activar entorno)
-fastapi dev src/main.py
-```
-
-Debes ver: `Uvicorn running on http://127.0.0.1:8000`
-
-Visita `http://localhost:8000/docs` para interactuar con la API.
-
-### ⚙️ Ejecucion
-
-#### Con uv (recomendado)
-
-Sigue estos pasos en orden:
-
-```bash
-uv venv
+# 1. Crear entorno e instalar dependencias
 uv sync
+
+# 2. Levantar la app
 uv run fastapi dev src/main.py
+
+# 3. Abrir en navegador
+open http://localhost:8000/docs
 ```
 
-Si activas el entorno virtual creado por uv, tambien puedes ejecutar:
+> Si no usas `uv`, activa un virtualenv e instala con `pip install -r requirements.txt`.
+
+---
+
+## Qué vas a aprender
+
+| Concepto | Qué significa en este proyecto |
+|----------|-------------------------------|
+| **Clean Architecture** | Separar dominio, aplicación, infraestructura y presentación en capas independientes |
+| **SOLID** | Aplicar SRP (una clase/función, una razón para cambiar), DIP (dependencias apuntan hacia el dominio) y OCP (extensión sin modificación) |
+| **Polimorfismo** | Usar protocolos/ABC para inyectar validadores composables |
+| **Value Objects** | Encapsular reglas de negocio en objetos inmutables que se auto-validan |
+| **TDD** | Escribir el test primero, hacerlo pasar, refactorizar |
+| **Pydantic validators** | Validar en el límite HTTP antes de que los datos entren al dominio |
+| **Pruebas automatizadas** | Cobertura de unitarias (lógica de negocio) e integración (endpoints) |
+
+---
+
+## El punto de partida
+
+`src/main.py` es un **monolito de 118 líneas** que hace todo:
+
+- Define el modelo Pydantic `Book`
+- Lee y escribe `library.json` (I/O bloqueante)
+- Implementa los 6 endpoints directamente
+- Sin capas, sin validación de dominio, sin abstracciones
+
+### Malas prácticas intencionales
+
+- [ ] Todo en un solo archivo (`src/main.py`)
+- [ ] I/O bloqueante sin locks (race conditions potenciales)
+- [ ] Persistencia en JSON (sin esquema ni transacciones)
+- [ ] Sin validación de dominio (solo tipos Pydantic)
+- [ ] Sin docstrings
+- [ ] Sin tests
+- [ ] Sin manejo de errores estructurado
+- [ ] Sin variables de entorno configurables
+
+---
+
+## La consigna
+
+Refactoriza la app aplicando **Clean Architecture + SOLID + TDD**. Tu meta no es "hacer que funcione" — ya funciona. Tu meta es **hacer que sea mantenible, testeable y extensible**.
+
+### Requisitos obligatorios
+
+1. **Clean Architecture**  
+   Separar en 4 capas: `domain/`, `application/`, `infrastructure/`, `api/`. El dominio NO depende de ninguna otra capa.
+
+2. **Validación polimórfica**  
+   Crear un protocolo `Validator[T]` con validadores concretos (uno por archivo). Componerlos con `CompositeValidator`. Inyectar el validador en los casos de uso como parámetro opcional.
+
+3. **Value Objects**  
+   Extraer `BookName`, `BookAuthor`, `BookUrl` como objetos inmutables que validan en su constructor. La entidad `Book` debe componer estos VOs.
+
+4. **Base de datos relacional**  
+   Reemplazar `library.json` por SQLite o PostgreSQL usando SQLModel o SQLAlchemy.
+
+5. **Tests**  
+   - Unitarios: lógica de dominio (validadores, VOs, entidades)
+   - Integración: endpoints HTTP
+   - Cobertura mínima: endpoints principales + lógica de negocio
+
+6. **Calidad de código**  
+   - Google Docstrings en **todas** las funciones y clases públicas
+   - `ruff check` y `ruff format` sin errores
+   - `ty check` sin errores de tipo
+
+### Requisitos opcionales (suman puntos)
+
+- [ ] Agregar logging estructurado
+- [ ] Usar variables de entorno (`.env`) para configuración
+- [ ] Implementar migraciones con Alembic
+- [ ] Agregar rate limiting o autenticación básica
+- [ ] Documentar decisiones técnicas en `ARCHITECTURE.md`
+
+---
+
+## Hoja de ruta paso a paso
+
+No intentes hacer todo de una. Sigue este orden:
+
+### Paso 1 — Extraer el dominio (sin tocar FastAPI)
+
+```
+domain/
+├── entities.py          # Book (composición de VOs)
+├── exceptions.py        # DomainError, ValidationError
+├── repositories.py      # BookRepository (ABC)
+├── validators/
+│   ├── protocol.py      # Validator[T]
+│   ├── book_name.py     # BookNameValidator
+│   ├── book_author.py   # BookAuthorValidator
+│   ├── book_url.py      # BookUrlValidator
+│   └── composite.py     # CompositeValidator
+└── value_objects/
+    ├── book_name.py     # BookName
+    ├── book_author.py   # BookAuthor
+    └── book_url.py      # BookUrl
+```
+
+> **Regla:** cada archivo ≤ 300 líneas, cada función ≤ 20 líneas.
+
+### Paso 2 — Casos de uso (orquestación)
+
+```
+application/
+└── use_cases/
+    ├── create_book.py
+    ├── read_book.py
+    ├── list_books.py
+    ├── search_books.py
+    ├── update_book.py
+    ├── replace_book.py
+    └── delete_book.py
+```
+
+Cada caso de uso recibe un `Validator[Book] | None = None` y valida antes de persistir.
+
+### Paso 3 — Infraestructura (persistencia + serialización)
+
+```
+infrastructure/
+├── json_book_repository.py    # o sql_book_repository.py
+└── serializers/
+    └── json_book_serializer.py
+```
+
+Extraer la serialización del repositorio (SRP).
+
+### Paso 4 — API (presentación)
+
+```
+api/
+├── schemas.py         # BookPayload con @field_validator
+├── routers/
+│   └── books.py       # Endpoints FastAPI
+├── dependencies.py    # Inyección de dependencias
+└── mappers.py         # BookPayload <-> Book
+```
+
+Agregar `@field_validator` en `BookPayload` como **primera línea de defensa**.
+
+### Paso 5 — Tests
+
+```
+tests/
+├── conftest.py
+├── unit/
+│   ├── test_validators.py
+│   ├── test_value_objects.py
+│   ├── test_domain_entities.py
+│   ├── test_book_use_cases.py
+│   └── test_json_book_repository.py
+└── integration/
+    └── test_books_api.py
+```
+
+> **Recuerda:** `tests/` va en la raíz, no dentro de `src/`.
+
+---
+
+## Arquitectura objetivo
+
+### Diagrama de capas
+
+```
+┌─────────────────────────────────────┐
+│  API Layer (FastAPI)                │
+│  schemas.py, routers/books.py       │
+├─────────────────────────────────────┤
+│  Application Layer                  │
+│  use_cases/ (orquestación)          │
+├─────────────────────────────────────┤
+│  Domain Layer (sin dependencias)    │
+│  entities, validators, VOs          │
+├─────────────────────────────────────┤
+│  Infrastructure Layer               │
+│  repositories, serializers, BD      │
+└─────────────────────────────────────┘
+```
+
+**Regla de oro:** las flechas de dependencia apuntan **hacia adentro** (hacia el dominio). El dominio no sabe nada de FastAPI, JSON ni SQL.
+
+### Diagrama de flujo HTTP
+
+```mermaid
+flowchart LR
+    Client[Cliente HTTP] -->|POST /books| Router[api/routers/books.py]
+    Router -->|BookPayload| Schema[api/schemas.py]
+    Schema -->|valida| Pydantic[@field_validator]
+    Schema -->|Book| UseCase[application/use_cases/]
+    UseCase -->|valida| Validator[domain/validators/]
+    UseCase -->|persiste| Repo[infrastructure/]
+    Repo -->|SQL/JSON| DB[(SQLite/JSON)]
+    UseCase -->|Book| Router
+    Router -->|JSON| Client
+```
+
+---
+
+## Testing
+
+### Ejecutar tests
 
 ```bash
-fastapi dev src/main.py
-```
-
-Otros comandos utiles:
-
-```bash
-uv run pytest
-uv run ruff format .
-uv run ruff check .
-uv run ty check .
-```
-
-#### Sin uv (pip tradicional)
-
-1. Crea el entorno virtual:
-
-**Windows (PowerShell):**
-```bash
-python -m venv .venv
-.\.venv\Scripts\Activate
-```
-
-**Windows (CMD):**
-```bash
-python -m venv .venv
-.\.venv\Scripts\activate.bat
-```
-
-**macOS / Linux:**
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-2. Instala dependencias:
-```bash
-pip install -r requirements.txt
-```
-
-3. Ejecuta la app:
-```bash
-fastapi dev src/main.py
-```
-
-Otros comandos utiles:
-
-```bash
-pytest
-ruff format .
-ruff check .
-ty check .
-```
-
-### 🔧 Configuracion de variables de entorno
-
-Crea un archivo `.env` en la raiz del proyecto (basate en `.env.example`):
-
-```bash
-DATABASE_URL=sqlite:///./library.db
-# Para PostgreSQL: postgresql://user:password@localhost/dbname
-DEBUG=True
-```
-
-Cargalas en tu codigo con `python-dotenv`:
-
-```python
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
-database_url = os.getenv("DATABASE_URL")
-```
-
-### 📝 Requisitos tecnicos de la entrega
-
-1. **Clean Architecture:** Aplicar separacion clara de capas (dominio, aplicacion, infraestructura).
-2. **Dependencias invertidas:** Los modelos de dominio no dependen de la persistencia.
-3. **Base de datos:** Reemplazar `library.json` por **SQLite o PostgreSQL** usando **SQLModel o SQLAlchemy** como ORM.
-4. **Pruebas:** Integrar pytest (unitarias e integracion). Cobertura minima: endpoints principales y logica de negocio.
-5. **Documentacion:** Google Docstring en **todas las funciones/clases**. **No** usar comentarios inline.
-6. **Decisiones tecnicas:** Documentar en README o docstrings.
-
-### 🔄 Migracion a base de datos
-
-Cuando refactorices con SQLModel o SQLAlchemy:
-
-1. Define los modelos en `src/domain/models.py` con SQLModel o SQLAlchemy ORM.
-2. Crea un script de migracion en `src/migrations/` o usa Alembic (opcional pero recomendado).
-3. Configura la conexion a SQLite/PostgreSQL en `.env`.
-4. Actualiza los endpoints para usar el ORM en lugar de I/O JSON.
-5. Implementa un repositorio en `src/infrastructure/repositories.py` para centralizar acceso a datos.
-
-**Ejemplo minimo de modelo SQLModel:**
-```python
-from sqlmodel import SQLModel, Field
-from typing import Optional
-
-class Book(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    name: str
-    author: str
-    description: str = ""
-    url: str = ""
-    content: str = ""
-```
-
-**Ejemplo minimo de modelo SQLAlchemy:**
-```python
-from sqlalchemy import Column, String, Integer
-from sqlalchemy.orm import declarative_base
-
-Base = declarative_base()
-
-class Book(Base):
-    __tablename__ = "books"
-    
-    id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
-    author = Column(String)
-    description = Column(String, default="")
-    url = Column(String, default="")
-    content = Column(String, default="")
-```
-
-### ✅ Pruebas
-
-Las pruebas deben cubrir:
-
-- Endpoints principales (GET, POST, PUT, DELETE)
-- Logica de negocio (validaciones, busquedas)
-- Casos de error (404, 400, etc.)
-
-Estructura recomendada:
-
-```python
-# src/test/unit/test_services.py
-def test_crear_libro():
-    # Arrange, Act, Assert
-    pass
-
-# src/test/integration/test_api.py
-def test_get_books_endpoint(client):
-    response = client.get("/books")
-    assert response.status_code == 200
-```
-
-Ejecuta:
-
-```bash
+# Todos los tests
 pytest -v
-pytest --cov=src
+
+# Solo unitarios
+pytest tests/unit/ -v
+
+# Solo integración
+pytest tests/integration/ -v
+
+# Con cobertura
+pytest --cov=src --cov-report=term-missing
 ```
 
-### 🔧 Flujo de GitHub (Ruff)
+### Estructura de un test unitario
 
-En `.github/workflows/ruff.yml` tienes un archivo vacio. Debes completar ese workflow para aplicar **formateo automatico con ruff** cuando envies cambios (push y Pull Request). El workflow debe ejecutar:
+```python
+# tests/unit/test_validators.py
+from domain.entities import Book
+from domain.validators.book_name import BookNameValidator
 
-1. `ruff format --check` (verifica sin modificar; falla si hay cambios necesarios)
-2. `ruff check` (lint)
 
-**Recomendacion:** ejecuta `ruff format` localmente antes de hacer push para evitar fallos en CI.
-
-Ejemplo minimo de job:
-```yaml
-name: Ruff Format & Lint
-on: [push, pull_request]
-jobs:
-  ruff:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/ruff-action@v1
-        with:
-          args: "format --check"
-      - uses: astral-sh/ruff-action@v1
-        with:
-          args: "check"
+def test_empty_name_returns_error():
+    """Un nombre vacío produce un ValidationError."""
+    book = Book(id="1", name="")
+    errors = BookNameValidator().validate(book)
+    assert len(errors) == 1
+    assert errors[0].field == "name"
 ```
 
-### 📝 Malas practicas intencionales a refactorizar
+### Estructura de un test de integración
 
-El codigo base contiene deliberadamente:
+```python
+# tests/integration/test_books_api.py
+from fastapi.testclient import TestClient
+from main import create_app
 
-- ✗ Todo en un archivo (sin separacion de capas)
-- ✗ I/O bloqueante sin locks (race conditions)
-- ✗ Almacenamiento en JSON (sin BD relacional)
-- ✗ Sin validaciones robustas
-- ✗ Sin docstrings (Google format)
-- ✗ Sin pruebas
-- ✗ Sin manejo de errores avanzado
-- ✗ Sin logging estructurado
-- ✗ Sin variables de entorno
 
-Tu objetivo es **eliminar todas estas problemas** aplicando patrones profesionales.
+def test_post_book_returns_201(client):
+    """POST /books crea un libro y devuelve 201."""
+    response = client.post("/books", json={"name": "Clean Code"})
+    assert response.status_code == 201
+    assert response.json()["name"] == "Clean Code"
+```
 
-### 📤 Entrega y evaluacion
+---
 
-**Deadline:** Antes de la ultima clase - **Martes 26 de mayo de 2026**
+## Herramientas
 
-- **Trabajo individual** por defecto. Si deseas trabajar en equipo, solicita aprobacion a los instructores **via grupo** antes de comenzar.
-- Se evaluara el **uso correcto de tecnicas de prompting**. Debes adjuntar los prompts utilizados durante tu interaccion con la IA junto con el proyecto modificado.
-- Crea una **rama** desde `main` y envia una **Pull Request** con tus cambios y evidencia de los prompts.
+| Herramienta | Para qué | Comando |
+|-------------|----------|---------|
+| **uv** | Gestor de dependencias y entornos | `uv sync`, `uv run pytest` |
+| **pytest** | Testing framework | `pytest -v` |
+| **ruff** | Linter + formateador | `ruff check .`, `ruff format .` |
+| **ty** | Type checker | `ty check src/` |
 
-**Como documentar los prompts:**
+### Configuración mínima de `pyproject.toml`
 
-Crea un archivo `PROMPTS.md` en la raiz del proyecto:
+Ya viene configurado. No lo modifiques salvo que sepas lo que haces.
+
+---
+
+## Entrega
+
+### Formato
+
+1. Crea una **rama** desde `main`:
+   ```bash
+   git checkout -b feat/tu-nombre-refactor
+   ```
+
+2. Realiza **commits frecuentes** con mensajes descriptivos:
+   ```bash
+   git commit -m "feat(domain): add Validator protocol and concrete validators"
+   ```
+
+3. Crea un **Pull Request** a `main` con:
+   - Título descriptivo: `Refactor: Clean Architecture + SOLID + Validation`
+   - Descripción de cambios realizados
+   - Screenshots o logs de tests pasando
+   - Archivo `PROMPTS.md` con los prompts utilizados (ver formato abajo)
+
+### PROMPTS.md
+
+Documenta tus interacciones con la IA:
 
 ```markdown
-# Prompts utilizados - Refactor Biblioteca Digital
+# Prompts utilizados
 
-## 1. Arquitectura y estructura
-**Prompt utilizado:**
-\`\`\`
-[Tu prompt aqui]
-\`\`\`
-
-**Resultado/Cambios:**
-- Separacion de capas
-- Creacion de modelos
-
-## 2. Integracion con SQLModel
-**Prompt utilizado:**
-\`\`\`
-[Tu prompt aqui]
-\`\`\`
-
-**Resultado/Cambios:**
-- Modelos con SQLModel
-- Sesion de BD
-
-... continua con cada seccion importante
+## 1. Extracción del dominio
+**Prompt:**
+```
+[Pega tu prompt exacto aquí]
 ```
 
-**Checklist de entrega:**
+**Resultado:**
+- Creación de `domain/entities.py`
+- Creación de `domain/validators/`
+
+## 2. ... (continúa con cada paso importante)
+```
+
+### Checklist de entrega
+
 - [ ] Rama creada desde `main`
-- [ ] Clean Architecture aplicada (separacion de capas)
-- [ ] SQLModel o SQLAlchemy integrado con SQLite o PostgreSQL
-- [ ] Pruebas automatizadas (pytest) funcionales
-- [ ] Google Docstrings en todas las funciones/clases
-- [ ] Ruff format sin errores
-- [ ] Archivo `PROMPTS.md` con prompts adjuntos
-- [ ] Pull Request enviada antes del 26 de mayo 2026
-- [ ] PR con descripcion clara de cambios realizados
+- [ ] Clean Architecture aplicada (4 capas separadas)
+- [ ] Validación polimórfica con CompositeValidator
+- [ ] Value Objects (BookName, BookAuthor, BookUrl)
+- [ ] SQLModel o SQLAlchemy integrado
+- [ ] Tests unitarios + integración funcionales
+- [ ] Google Docstrings en todo el código público
+- [ ] `ruff check` sin errores
+- [ ] `PROMPTS.md` adjunto
+- [ ] Pull Request enviada
 
-## 📖 Documentacion
+**Deadline:** Martes 26 de mayo de 2026
 
-### Documentacion interactiva de la API
+---
 
-La documentacion de la API esta disponible en: `http://localhost:8000/docs`
+## FAQ y troubleshooting
 
-Swagger UI y ReDoc son generados automaticamente por FastAPI.
+### "No se ejecuta la app"
 
-### Referencias de documentacion oficial
+```bash
+# Verificar entorno
+uv sync
+uv run fastapi dev src/main.py
 
-Durante el refactor, consulta la documentacion oficial:
+# Si usas pip
+python -m venv .venv
+source .venv/bin/activate  # o .venv\Scripts\activate en Windows
+pip install -r requirements.txt
+fastapi dev src/main.py
+```
 
-- **[FastAPI](https://fastapi.tiangolo.com/)** - Crear endpoints, validaciones, seguridad
-- **[SQLModel](https://sqlmodel.tiangolo.com/#requirements)** - ORM basado en Pydantic y SQLAlchemy
-- **[SQLAlchemy](https://docs.sqlalchemy.org/en/20/)** - ORM y operaciones avanzadas de BD
-- **[pytest](https://docs.pytest.org/en/stable/)** - Testing framework
-- **[ruff](https://docs.astral.sh/ruff/)** - Linter y formateador
-- **[ty](https://docs.astral.sh/ty/)** - Type checker
-- **[uv](https://docs.astral.sh/uv/)** - Gestor de dependencias
+### "Error de importación de módulos"
 
-## ❓ Preguntas y soporte
+- `pythonpath = ["src"]` ya está configurado en `pyproject.toml`
+- Si usas VS Code, asegúrate de que el Python interpreter apunte al `.venv`
 
-**En caso de dudas:**
+### "pytest no encuentra los tests"
 
-- Consulta a los **instructores via grupo** (preferido)
-- Formular preguntas en el grupo permite que **todos tus companeros se beneficien** de la retroalimentacion
-- Los instructores monitorearan el grupo regularmente
-- Evita DMs privados para que la comunidad aprenda en conjunto
+```bash
+# Los tests deben estar en tests/ (raíz), no en src/test/
+ls tests/unit/test_*.py
+pytest -v
+```
 
-**Temas comunes:**
-- Problemas con la BD: consulta la documentacion de SQLAlchemy
-- Errores en pruebas: revisa los fixtures de pytest
-- Formato de codigo: ejecuta `ruff format .` localmente
-- Arquitectura: revisa los diagramas de este README
+### "Ruff marca errores de formato"
 
-## 🐛 Troubleshooting
+```bash
+uv run ruff format .   # auto-formatea
+uv run ruff check .    # verifica
+```
 
-**"No se ejecuta la app"**
-- Verifica que `uv venv` y `uv sync` se ejecutaron correctamente
-- Comprueba que FastAPI esta instalado: `uv run pip list | grep fastapi`
+### "ty marca errores en tests"
 
-**"Error de importacion de modulos"**
-- Asegúrate de activar el entorno virtual
-- Ejecuta `uv sync` nuevamente
+Algunos tests deliberadamente provocan errores (ej: mutar frozen dataclasses). Estos deben tener `# ty: ignore[codigo]`:
 
-**"Las pruebas no detectan los modelos"**
-- Verifica la ruta en `sys.path` en `conftest.py`
-- Usa rutas absolutas si es necesario
+```python
+name.value = "other"  # ty: ignore[invalid-assignment]
+```
 
-**"Ruff marca errores de formato"**
-- Ejecuta `uv run ruff format .` para auto-formatear
-- Revisa las reglas en `pyproject.toml`
+---
 
-## ℹ️ Nota
+## Recursos oficiales
 
-Repositorio para fines educativos - no usar en produccion.
+- [FastAPI](https://fastapi.tiangolo.com/)
+- [SQLModel](https://sqlmodel.tiangolo.com/)
+- [SQLAlchemy](https://docs.sqlalchemy.org/en/20/)
+- [pytest](https://docs.pytest.org/)
+- [ruff](https://docs.astral.sh/ruff/)
+- [ty](https://docs.astral.sh/ty/)
+- [uv](https://docs.astral.sh/uv/)
+- [Clean Architecture — Uncle Bob](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
 
+---
 
-
+> **Nota:** Repositorio para fines educativos. No usar en producción.
