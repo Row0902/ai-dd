@@ -10,6 +10,8 @@ from domain.auth.ports import (
     TokenService,
     UserRepository,
 )
+from domain.collections.repositories import CollectionRepository
+from domain.favorites.repositories import FavoriteRepository
 from domain.repositories import BookRepository
 from infrastructure.auth.bcrypt_password_hasher import BcryptPasswordHasher
 from infrastructure.auth.in_memory_invitation_repository import (
@@ -20,6 +22,12 @@ from infrastructure.auth.jwt_token_service import JwtTokenService
 from infrastructure.auth.logging_notification_service import (
     LoggingNotificationService,
 )
+from infrastructure.persistence.in_memory_collection_repository import (
+    InMemoryCollectionRepository,
+)
+from infrastructure.persistence.in_memory_favorite_repository import (
+    InMemoryFavoriteRepository,
+)
 
 _settings: AppSettings | None = None
 
@@ -28,6 +36,8 @@ _user_repo: UserRepository | None = None
 _invitation_repo: InvitationRepository | None = None
 _password_hasher: PasswordHasher | None = None
 _notification_service: NotificationService | None = None
+_collection_repo: CollectionRepository | None = None
+_favorite_repo: FavoriteRepository | None = None
 
 
 def get_settings() -> AppSettings:
@@ -106,3 +116,37 @@ def get_notification_service() -> NotificationService:
     if _notification_service is None:
         _notification_service = LoggingNotificationService()
     return _notification_service
+
+
+def get_collection_repo() -> CollectionRepository:
+    """Provide a CollectionRepository implementation.
+
+    Returns:
+        In-memory collection repository (singleton).
+    """
+    global _collection_repo
+    if _collection_repo is None:
+        _collection_repo = InMemoryCollectionRepository()
+    return _collection_repo
+
+
+def get_favorite_repo() -> FavoriteRepository:
+    """Provide a FavoriteRepository implementation.
+
+    Returns:
+        In-memory favorite repository (singleton).
+    """
+    global _favorite_repo
+    if _favorite_repo is None:
+        _favorite_repo = InMemoryFavoriteRepository()
+    return _favorite_repo
+
+
+def _reset_repos() -> None:
+    """Reset all singleton repository instances.
+
+    Called during test setup to ensure test isolation.
+    """
+    global _collection_repo, _favorite_repo
+    _collection_repo = None
+    _favorite_repo = None

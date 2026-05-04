@@ -17,6 +17,8 @@ from api.dependencies import get_book_repo, get_settings
 from api.middleware.logging import logging_middleware
 from api.routers.auth import router as auth_router
 from api.routers.books import router as books_router
+from api.routers.collections import router as collections_router
+from api.routers.favorites import router as favorites_router
 from api.routers.health import router as health_router
 from config.settings import AppSettings
 from domain.auth.exceptions import (
@@ -104,6 +106,8 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
     app.include_router(books_router)
     app.include_router(auth_router)
     app.include_router(health_router)
+    app.include_router(collections_router)
+    app.include_router(favorites_router)
 
     # Dependency overrides
     app.dependency_overrides[get_book_repo] = lambda: repo

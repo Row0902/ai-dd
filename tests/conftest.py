@@ -9,6 +9,7 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
+from api.dependencies import _reset_repos
 from config.settings import AppSettings
 from infrastructure.auth.jwt_token_service import JwtTokenService
 from main import create_app
@@ -49,12 +50,15 @@ def test_settings() -> AppSettings:
 def client(test_settings: AppSettings) -> TestClient:
     """Create a TestClient with in-memory repository and test settings.
 
+    Resets singleton repos to ensure test isolation.
+
     Args:
         test_settings: Test application settings.
 
     Returns:
         Configured TestClient instance.
     """
+    _reset_repos()
     return TestClient(create_app(test_settings))
 
 
