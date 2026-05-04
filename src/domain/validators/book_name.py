@@ -1,7 +1,8 @@
-"""BookNameValidator: validates book name is non-empty and <=200 chars."""
+"""BookNameValidator: validates book name is non-empty and within length limits."""
 
 from domain.entities import Book
 from domain.exceptions import ValidationError
+from domain.validation_rules import MAX_TITLE_LENGTH
 from domain.validators.protocol import Validator
 
 
@@ -17,8 +18,11 @@ class BookNameValidator(Validator[Book]):
                     field="name", message="Name cannot be empty or whitespace"
                 )
             )
-        elif len(entity.name) > 200:
+        elif len(entity.name) > MAX_TITLE_LENGTH:
             errors.append(
-                ValidationError(field="name", message="Name exceeds 200 characters")
+                ValidationError(
+                    field="name",
+                    message=f"Name exceeds {MAX_TITLE_LENGTH} characters",
+                )
             )
         return errors

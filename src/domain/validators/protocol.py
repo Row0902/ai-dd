@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TypeVar
+from typing import Generic, TypeVar
 
 from domain.exceptions import ValidationError
 
 T = TypeVar("T")
 
 
-class Validator[T](ABC):
+class Validator(ABC, Generic[T]):
     """Abstract base class for domain validators.
 
     Concrete validators implement `validate(entity)` and return

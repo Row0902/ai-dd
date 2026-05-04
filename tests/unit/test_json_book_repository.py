@@ -121,3 +121,51 @@ class TestDictToBook:
         assert len(books) == 2
         assert books[0].name == "Good Book"
         assert books[1].name == "Another Good Book"
+
+
+class TestListPagination:
+    """Tests for list() pagination with limit and offset."""
+
+    def _create_books(self, repo: JsonBookRepository, count: int) -> None:
+        """Helper to create N books."""
+        for i in range(count):
+            repo.create(Book(id="", name=f"Book {i:02d}", author=f"Author {i}"))
+
+    def test_list_default_limit_returns_all_when_fewer(self, tmp_path: Path) -> None:
+        """Default limit=20 returns all books when fewer exist."""
+        repo = _repo(tmp_path)
+        self._create_books(repo, 5)
+        books = repo.list()
+        assert len(books) == 5
+
+    def test_list_limit_caps_results(self, tmp_path: Path) -> None:
+        """list(limit=3) returns at most 3 books."""
+        repo = _repo(tmp_path)
+        self._create_books(repo, 10)
+        books = repo.list(limit=3)
+        assert len(books) == 3
+        assert books[0].name == "Book 00"
+
+    def test_list_offset_skips_books(self, tmp_path: Path) -> None:
+        """list(offset=2) skips the first 2 books."""
+        repo = _repo(tmp_path)
+        self._create_books(repo, 5)
+        books = repo.list(offset=2)
+        assert len(books) == 3
+        assert books[0].name == "Book 02"
+
+    def test_list_limit_and_offset_together(self, tmp_path: Path) -> None:
+        """list(limit=2, offset=3) returns books 3 and 4."""
+        repo = _repo(tmp_path)
+        self._create_books(repo, 10)
+        books = repo.list(limit=2, offset=3)
+        assert len(books) == 2
+        assert books[0].name == "Book 03"
+        assert books[1].name == "Book 04"
+
+    def test_list_offset_beyond_end_returns_empty(self, tmp_path: Path) -> None:
+        """list(offset=100) on a 5-book repo returns empty list."""
+        repo = _repo(tmp_path)
+        self._create_books(repo, 5)
+        books = repo.list(offset=100)
+        assert books == []
