@@ -1,0 +1,12 @@
+# Docker Compose — ai-dd infrastructure services
+#
+# Orchestrates PostgreSQL (data) and Redis (cache/sessions).
+# The FastAPI application runs natively during development.
+#
+# Usage:
+#   docker compose -f docker/docker-compose.yml up -d
+#   docker compose -f docker/docker-compose.yml down
+
+include:
+  - services/postgres.yml
+  - services/redis.yml
