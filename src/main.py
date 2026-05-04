@@ -45,9 +45,9 @@ async def lifespan(app: FastAPI):
     Args:
         app: The FastAPI application instance.
     """
-    logger.info("startup", event="starting", service="ai-dd")
+    logger.info("startup", action="starting", service="ai-dd")
     yield
-    logger.info("shutdown", event="stopping", service="ai-dd")
+    logger.info("shutdown", action="stopping", service="ai-dd")
 
 
 def create_app(settings: AppSettings | None = None) -> FastAPI:
