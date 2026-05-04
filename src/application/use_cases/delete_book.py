@@ -8,7 +8,7 @@ from __future__ import annotations
 from domain.repositories import BookRepository
 
 
-def delete_book(repo: BookRepository, book_id: str) -> bool:
+async def delete_book(repo: BookRepository, book_id: str) -> bool:
     """Delete a book.
 
     Args:
@@ -18,4 +18,4 @@ def delete_book(repo: BookRepository, book_id: str) -> bool:
     Returns:
         True if deleted, False if not found.
     """
-    return repo.delete(book_id)
+    return await repo.delete(book_id)

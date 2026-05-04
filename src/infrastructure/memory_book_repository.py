@@ -26,7 +26,7 @@ class InMemoryBookRepository(BookRepository):
         self._books: dict[str, Book] = {}
         self._lock = threading.Lock()
 
-    def list(self, limit: int = 20, offset: int = 0) -> builtins.list[Book]:
+    async def list(self, limit: int = 20, offset: int = 0) -> builtins.list[Book]:
         """List books with pagination.
 
         Args:
@@ -39,7 +39,7 @@ class InMemoryBookRepository(BookRepository):
         books = list(self._books.values())
         return books[offset : offset + limit]
 
-    def get(self, book_id: str) -> Book | None:
+    async def get(self, book_id: str) -> Book | None:
         """Get a book by ID.
 
         Args:
@@ -50,7 +50,7 @@ class InMemoryBookRepository(BookRepository):
         """
         return self._books.get(book_id)
 
-    def get_by_name(self, name: str) -> builtins.list[Book]:
+    async def get_by_name(self, name: str) -> builtins.list[Book]:
         """Search books by case-insensitive substring match on name.
 
         Args:
@@ -62,7 +62,7 @@ class InMemoryBookRepository(BookRepository):
         needle = name.lower()
         return [b for b in self._books.values() if needle in b.name.lower()]
 
-    def create(self, book: Book) -> Book:
+    async def create(self, book: Book) -> Book:
         """Create a new book.
 
         If the passed entity has an empty id, assign a UUID4 hex id.
@@ -85,7 +85,7 @@ class InMemoryBookRepository(BookRepository):
             self._books[created.id] = created
             return created
 
-    def update(self, book_id: str, book: Book) -> Book | None:
+    async def update(self, book_id: str, book: Book) -> Book | None:
         """Update an existing book.
 
         Args:
@@ -109,7 +109,7 @@ class InMemoryBookRepository(BookRepository):
             self._books[book_id] = updated
             return updated
 
-    def delete(self, book_id: str) -> bool:
+    async def delete(self, book_id: str) -> bool:
         """Delete a book by id.
 
         Args:

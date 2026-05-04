@@ -9,7 +9,7 @@ from domain.entities import Book
 from domain.repositories import BookRepository
 
 
-def get_book(repo: BookRepository, book_id: str) -> Book | None:
+async def get_book(repo: BookRepository, book_id: str) -> Book | None:
     """Return a book by its ID.
 
     Args:
@@ -19,4 +19,4 @@ def get_book(repo: BookRepository, book_id: str) -> Book | None:
     Returns:
         The book if found, otherwise None.
     """
-    return repo.get(book_id)
+    return await repo.get(book_id)

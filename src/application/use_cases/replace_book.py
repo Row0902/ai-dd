@@ -13,7 +13,7 @@ from domain.validators.protocol import Validator
 from .create_book import _validate_or_raise
 
 
-def replace_book(
+async def replace_book(
     repo: BookRepository,
     book_id: str,
     *,
@@ -55,4 +55,4 @@ def replace_book(
         content=content,
     )
     _validate_or_raise(validator, replacement)
-    return repo.update(book_id, replacement)
+    return await repo.update(book_id, replacement)

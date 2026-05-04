@@ -9,7 +9,7 @@ from domain.entities import Book
 from domain.repositories import BookRepository
 
 
-def get_books_by_name(repo: BookRepository, name: str) -> list[Book]:
+async def get_books_by_name(repo: BookRepository, name: str) -> list[Book]:
     """Search books by name.
 
     Delegates search semantics to the repository port.
@@ -21,4 +21,4 @@ def get_books_by_name(repo: BookRepository, name: str) -> list[Book]:
     Returns:
         List of matching books.
     """
-    return repo.get_by_name(name)
+    return await repo.get_by_name(name)

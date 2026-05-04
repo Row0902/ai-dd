@@ -1,6 +1,6 @@
 """JSON file repository adapter.
 
-Implements the domain `BookRepository` port using a local JSON file containing
+Implements the domain ``BookRepository`` port using a local JSON file containing
 an array of book objects (dicts).
 
 Behavior intentionally mirrors the current monolith:
@@ -39,26 +39,26 @@ class JsonBookRepository(BookRepository):
         self._data_file = data_file
         self._lock = threading.Lock()
 
-    def list(
+    async def list(
         self, limit: int = 20, offset: int = 0
     ) -> builtins.list[Book]:
         """List books with pagination."""
         books = self._load_books()
         return books[offset : offset + limit]
 
-    def get(self, book_id: str) -> Book | None:
+    async def get(self, book_id: str) -> Book | None:
         """Get a book by id."""
         for book in self._load_books():
             if book.id == book_id:
                 return book
         return None
 
-    def get_by_name(self, name: str) -> builtins.list[Book]:
+    async def get_by_name(self, name: str) -> builtins.list[Book]:
         """Search books by case-insensitive substring match on name."""
         needle = name.lower()
         return [b for b in self._load_books() if needle in b.name.lower()]
 
-    def create(self, book: Book) -> Book:
+    async def create(self, book: Book) -> Book:
         """Create a new book.
 
         If the passed entity has an empty id, assign a UUID4 hex id.
@@ -77,7 +77,7 @@ class JsonBookRepository(BookRepository):
             self._save_books_unlocked(books)
             return created
 
-    def update(self, book_id: str, book: Book) -> Book | None:
+    async def update(self, book_id: str, book: Book) -> Book | None:
         """Update an existing book.
 
         The passed `book` is treated as a full representation; its id is ignored
@@ -100,7 +100,7 @@ class JsonBookRepository(BookRepository):
                     return updated
             return None
 
-    def delete(self, book_id: str) -> bool:
+    async def delete(self, book_id: str) -> bool:
         """Delete a book by id."""
         with self._lock:
             books = self._load_books_unlocked()
