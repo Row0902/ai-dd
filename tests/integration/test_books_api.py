@@ -136,3 +136,62 @@ class TestBooksApi:
         created = client.post("/books", json={"name": "Old"}).json()
         resp = client.put(f"/books/{created['id']}", json={"name": "", "author": "Bob"})
         assert resp.status_code == 422
+
+
+class TestBooksApiPagination:
+    """Tests for pagination query parameters on GET /books."""
+
+    def _create_books(self, client: TestClient, count: int) -> list[dict]:
+        """Create multiple books and return their response bodies."""
+        books = []
+        for i in range(count):
+            resp = client.post("/books", json={"name": f"Book {i:02d}"})
+            assert resp.status_code == 200
+            books.append(resp.json())
+        return books
+
+    def test_list_books_default_pagination(self) -> None:
+        """GET /books should accept limit and offset query params."""
+        client = _client()
+        self._create_books(client, 3)
+        resp = client.get("/books")
+        assert resp.status_code == 200
+        assert len(resp.json()) == 3
+
+    def test_list_books_with_limit(self) -> None:
+        """GET /books?limit=2 should return at most 2 books."""
+        client = _client()
+        self._create_books(client, 5)
+        resp = client.get("/books?limit=2")
+        assert resp.status_code == 200
+        assert len(resp.json()) == 2
+
+    def test_list_books_with_offset(self) -> None:
+        """GET /books?offset=2 should skip first 2 books."""
+        client = _client()
+        self._create_books(client, 5)
+        resp = client.get("/books?offset=2")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert len(body) == 3
+
+    def test_list_books_with_limit_and_offset(self) -> None:
+        """GET /books?limit=2&offset=1 should return books 1-2."""
+        client = _client()
+        self._create_books(client, 5)
+        resp = client.get("/books?limit=2&offset=1")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert len(body) == 2
+
+    def test_list_books_limit_validation(self) -> None:
+        """GET /books?limit=0 should return 422 (ge=1 constraint)."""
+        client = _client()
+        resp = client.get("/books?limit=0")
+        assert resp.status_code == 422
+
+    def test_list_books_offset_validation(self) -> None:
+        """GET /books?offset=-1 should return 422 (ge=0 constraint)."""
+        client = _client()
+        resp = client.get("/books?offset=-1")
+        assert resp.status_code == 422

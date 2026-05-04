@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from api.dependencies import get_book_repo
 from api.mappers import book_to_dict
@@ -25,9 +25,19 @@ router = APIRouter()
 
 
 @router.get("/books")
-def list_books_endpoint(repo: Annotated[BookRepository, Depends(get_book_repo)]):
-    """List all books."""
-    return [book_to_dict(b) for b in list_books(repo)]
+def list_books_endpoint(
+    repo: Annotated[BookRepository, Depends(get_book_repo)],
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0,
+):
+    """List books with pagination.
+
+    Args:
+        repo: Repository port injected via dependency.
+        limit: Maximum number of books to return (1-100, default 20).
+        offset: Number of books to skip (default 0).
+    """
+    return [book_to_dict(b) for b in list_books(repo, limit=limit, offset=offset)]
 
 
 @router.get("/books/{book_id}")

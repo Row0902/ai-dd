@@ -1,6 +1,5 @@
 """Tests for config.settings: pydantic-settings AppSettings."""
 
-import os
 
 import pytest
 

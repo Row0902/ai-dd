@@ -10,21 +10,27 @@ class FakeRepo(BookRepository):
     """Minimal concrete repo for testing registry."""
 
     def list(self, limit=20, offset=0):
+        """Return empty list."""
         return []
 
     def get(self, book_id):
+        """Return None for any id."""
         return None
 
     def get_by_name(self, name):
+        """Return empty list for any name."""
         return []
 
     def create(self, book):
+        """Return book as-is."""
         return book
 
     def update(self, book_id, book):
+        """Return None for any id."""
         return None
 
     def delete(self, book_id):
+        """Return False for any id."""
         return False
 
 

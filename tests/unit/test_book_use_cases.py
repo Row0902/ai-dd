@@ -28,9 +28,10 @@ class InMemoryBookRepository(BookRepository):
         self._books: dict[str, Book] = {}
         self._next_id = 1
 
-    def list(self) -> builtins.list[Book]:
-        """List all books."""
-        return list(self._books.values())
+    def list(self, limit: int = 20, offset: int = 0) -> builtins.list[Book]:
+        """List books with pagination."""
+        books = list(self._books.values())
+        return books[offset : offset + limit]
 
     def get(self, book_id: str) -> Book | None:
         """Get book by id."""
