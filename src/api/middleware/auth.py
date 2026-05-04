@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from api.dependencies import get_settings
@@ -20,7 +20,8 @@ def require_permission(operation: Operation):
 
     Extracts a JWT from the ``Authorization: Bearer <token>`` header,
     verifies it, and checks that the user's role grants the requested
-    operation.
+    operation.  Stores the authenticated user id in ``request.state``
+    so downstream middleware (e.g., logging) can access it.
 
     Args:
         operation: The required operation for the endpoint.
@@ -37,12 +38,14 @@ def require_permission(operation: Operation):
     async def dependency(
         credentials: HTTPAuthorizationCredentials = Depends(security),
         settings: AppSettings = Depends(get_settings),
+        request: Request = None,  # ty: ignore[invalid-parameter-default]
     ) -> dict:
         """Verify JWT and check permission.
 
         Args:
             credentials: Bearer token from the Authorization header.
             settings: Application settings providing the JWT secret.
+            request: The incoming HTTP request (used to store user context).
 
         Returns:
             Dict with ``user_id`` and ``role`` keys.
@@ -67,6 +70,10 @@ def require_permission(operation: Operation):
             raise HTTPException(
                 status_code=403, detail="Insufficient permissions"
             )
-        return {"user_id": claims["sub"], "role": role}
+        ctx = {"user_id": claims["sub"], "role": role}
+        if request:
+            request.state.user_id = claims["sub"]
+            request.state.user_role = role.value
+        return ctx
 
     return dependency

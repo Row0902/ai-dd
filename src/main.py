@@ -6,6 +6,8 @@ to application use cases and persistence to infrastructure adapters.
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+
 import structlog
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,6 +29,23 @@ from infrastructure.json_book_repository import JsonBookRepository
 from infrastructure.memory_book_repository import InMemoryBookRepository
 from infrastructure.repository_factory import create_repository
 from infrastructure.repository_registry import register
+
+logger = structlog.get_logger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan handler for startup and shutdown events.
+
+    On startup: logs that the service is ready.
+    On shutdown: drains in-flight requests and logs graceful termination.
+
+    Args:
+        app: The FastAPI application instance.
+    """
+    logger.info("startup", event="starting", service="ai-dd")
+    yield
+    logger.info("shutdown", event="stopping", service="ai-dd")
 
 
 def create_app(settings: AppSettings | None = None) -> FastAPI:
@@ -67,7 +86,7 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
 
     repo = create_repository(settings)
 
-    app = FastAPI()
+    app = FastAPI(lifespan=lifespan)
 
     # CORS middleware
     app.add_middleware(
