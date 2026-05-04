@@ -120,6 +120,13 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
         exist in the current API.  Functionally equivalent to the design
         intent.
         """
+        logger.error(
+            "domain_error",
+            exception_type=type(exc).__name__,
+            message=str(exc),
+            path=request.url.path,
+            exc_info=True,
+        )
         if isinstance(exc, AggregatedValidationError):
             detail = [{"field": e.field, "message": e.message} for e in exc.errors]
         elif isinstance(exc, ValidationError):
@@ -133,6 +140,12 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
         request: Request, exc: AuthenticationError
     ) -> JSONResponse:
         """Convert AuthenticationError to HTTP 401."""
+        logger.warning(
+            "authentication_error",
+            exception_type=type(exc).__name__,
+            message=str(exc),
+            path=request.url.path,
+        )
         return JSONResponse(status_code=401, content={"detail": str(exc)})
 
     @app.exception_handler(AuthorizationError)
@@ -140,6 +153,12 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
         request: Request, exc: AuthorizationError
     ) -> JSONResponse:
         """Convert AuthorizationError to HTTP 403."""
+        logger.warning(
+            "authorization_error",
+            exception_type=type(exc).__name__,
+            message=str(exc),
+            path=request.url.path,
+        )
         return JSONResponse(status_code=403, content={"detail": str(exc)})
 
     @app.exception_handler(UserAlreadyExists)
@@ -147,6 +166,12 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
         request: Request, exc: UserAlreadyExists
     ) -> JSONResponse:
         """Convert UserAlreadyExists to HTTP 409."""
+        logger.warning(
+            "user_already_exists",
+            exception_type=type(exc).__name__,
+            message=str(exc),
+            path=request.url.path,
+        )
         return JSONResponse(status_code=409, content={"detail": str(exc)})
 
     @app.get("/")
