@@ -69,7 +69,7 @@ async def lifespan(app: FastAPI):
         app: The FastAPI application instance.
     """
     logger.info("startup", action="starting", service="ai-dd")
-    engine = app.state.get("db_engine")
+    engine = getattr(app.state, "db_engine", None)
     if engine is not None:
         from infrastructure.persistence.session import create_tables
 
