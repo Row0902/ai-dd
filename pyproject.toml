@@ -33,7 +33,7 @@ quote-style = "double"
 [tool.ruff.lint]
 extend-select = ["B", "D", "I", "N", "Q", "UP"]
 
-ignore = ["D203", "D213", "D104"]
+ignore = ["D203", "D213", "D104", "B008"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
