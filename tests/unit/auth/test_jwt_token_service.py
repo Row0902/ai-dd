@@ -71,8 +71,9 @@ class TestJwtTokenServiceVerify:
     def test_verify_tampered_token_raises_authentication_error(self) -> None:
         """Verify raises AuthenticationError for a token with invalid signature."""
         token = self.service.generate(user_id="u1", role="user")
-        # Tamper with the token by changing a character
-        tampered = token[:-1] + ("A" if token[-1] != "A" else "B")
+        # Tamper with the signature part (last base64 segment before any padding)
+        parts = token.rsplit(".", 1)
+        tampered = parts[0] + "." + "X" + parts[1][1:]
         with pytest.raises(AuthenticationError):
             self.service.verify(tampered)
 

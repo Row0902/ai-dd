@@ -7,6 +7,7 @@ to application use cases and persistence to infrastructure adapters.
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from urllib.parse import urlparse
 
 import structlog
 from fastapi import FastAPI, Request
@@ -34,24 +35,65 @@ from infrastructure.repository_registry import register
 
 logger = structlog.get_logger(__name__)
 
+# ── SQL backend (lazy-initialised per app instance) ────────────────
+_sql_engine = None
+
+
+async def _sql_repo_dependency():
+    """FastAPI dependency: yield a fresh SQLBookRepository per request.
+
+    Only active when ``DATABASE_URL`` uses a SQL scheme
+    (``sqlite://`` or ``postgresql://``).  The engine is created once
+    in ``create_app()`` and the session is scoped to the request.
+    """
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from infrastructure.persistence.sql_book_repository import SQLBookRepository
+
+    async with AsyncSession(_sql_engine) as session:
+        yield SQLBookRepository(session)
+
+
+# ── Lifespan ──────────────────────────────────────────────────────
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup and shutdown events.
 
-    On startup: logs that the service is ready.
-    On shutdown: drains in-flight requests and logs graceful termination.
+    On startup: logs readiness and creates database tables when a SQL
+    engine is available.
+    On shutdown: disposes the SQL engine and logs graceful termination.
 
     Args:
         app: The FastAPI application instance.
     """
     logger.info("startup", action="starting", service="ai-dd")
+    engine = app.state.get("db_engine")
+    if engine is not None:
+        from infrastructure.persistence.session import create_tables
+
+        await create_tables(engine)
+        logger.info("startup", action="tables_created")
     yield
+    if engine is not None:
+        await engine.dispose()
+        logger.info("shutdown", action="engine_disposed")
     logger.info("shutdown", action="stopping", service="ai-dd")
+
+
+# ── Application factory ───────────────────────────────────────────
 
 
 def create_app(settings: AppSettings | None = None) -> FastAPI:
     """Create a FastAPI app wired to a repository adapter.
+
+    Backend resolution (by ``DATABASE_URL`` scheme):
+
+    * ``memory://`` — ``InMemoryBookRepository`` (tests / dev default)
+    * ``json://``   — ``JsonBookRepository`` (legacy file persistence)
+    * ``sqlite://`` — ``SQLBookRepository`` with aiosqlite
+    * ``postgresql://`` — ``SQLBookRepository`` with asyncpg
 
     Args:
         settings: Application settings. If None, defaults are used with
@@ -60,8 +102,12 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
     Returns:
         Configured FastAPI application.
     """
+    global _sql_engine
+
     if settings is None:
         settings = AppSettings(DATABASE_URL="memory://")
+
+    scheme = urlparse(settings.DATABASE_URL).scheme or "memory"
 
     # Configure structlog
     structlog.configure(
@@ -82,13 +128,26 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
         cache_logger_on_first_use=True,
     )
 
-    # Register all known repository backends
-    register("memory", InMemoryBookRepository)
-    register("json", JsonBookRepository)
+    # ── Repository wiring ─────────────────────────────────────
+    if scheme in ("sqlite", "postgresql"):
+        # SQL backend: create engine → per-request session dependency
+        from infrastructure.persistence.session import create_engine_from_url
 
-    repo = create_repository(settings)
+        _sql_engine = create_engine_from_url(settings.DATABASE_URL)
+        repo_dep = _sql_repo_dependency
+    else:
+        # In-memory / file backend: singleton repo instance
+        register("memory", InMemoryBookRepository)
+        register("json", JsonBookRepository)
+        repo = create_repository(settings)
+
+        def repo_dep():
+            return repo
 
     app = FastAPI(lifespan=lifespan)
+    app.state.db_engine = (
+        _sql_engine if scheme in ("sqlite", "postgresql") else None
+    )
 
     # CORS middleware
     app.add_middleware(
@@ -110,7 +169,7 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
     app.include_router(favorites_router)
 
     # Dependency overrides
-    app.dependency_overrides[get_book_repo] = lambda: repo
+    app.dependency_overrides[get_book_repo] = repo_dep
     app.dependency_overrides[get_settings] = lambda: settings
 
     # Exception handlers

@@ -17,12 +17,12 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - ai-dd-network
+      - books-network
 
 volumes:
   postgres_data:
     driver: local
 
 networks:
-  ai-dd-network:
+  books-network:
     driver: bridge
