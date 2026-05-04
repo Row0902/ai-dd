@@ -20,7 +20,7 @@ from domain.auth.entities import UserRole
 from domain.auth.permissions import Operation
 from domain.collections.repositories import CollectionRepository
 
-router = APIRouter(prefix="/collections")
+router = APIRouter(prefix="/collections", tags=["collections"])
 
 
 class CollectionPayload(BaseModel):

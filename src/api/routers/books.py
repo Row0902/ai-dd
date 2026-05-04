@@ -24,7 +24,7 @@ from application.use_cases.search_books import get_books_by_name
 from domain.auth.permissions import Operation
 from domain.repositories import BookRepository
 
-router = APIRouter()
+router = APIRouter(tags=["books"])
 
 
 @router.get("/books")

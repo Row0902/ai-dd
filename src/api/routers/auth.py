@@ -34,7 +34,7 @@ from domain.auth.ports import (
     UserRepository,
 )
 
-router = APIRouter(prefix="/auth")
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 class RegisterPayload(BaseModel):
