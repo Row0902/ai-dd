@@ -4,13 +4,10 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-import pytest
-
 from config.settings import AppSettings
 from domain.rate_limiting.ports import RateLimiter
 from infrastructure.rate_limiting.noop_rate_limiter import NoOpRateLimiter
 from infrastructure.rate_limiting.redis_rate_limiter import RedisRateLimiter
-
 
 TEST_SECRET = "test-secret-key-at-least-32-chars-long"
 
@@ -26,7 +23,7 @@ class TestGetRedisClient:
 
     def test_returns_redis_client(self) -> None:
         """Provider returns a Redis client from settings REDIS_URL."""
-        from api.dependencies import get_redis_client, get_settings
+        from api.dependencies import get_redis_client
 
         self._reset_singleton()
         settings = AppSettings(
