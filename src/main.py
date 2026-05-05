@@ -6,22 +6,37 @@ to application use cases and persistence to infrastructure adapters.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from api.dependencies import get_book_repo
 from api.routers.books import router as books_router
+from config.settings import AppSettings
 from domain.exceptions import AggregatedValidationError, DomainError, ValidationError
 from infrastructure.json_book_repository import JsonBookRepository
+from infrastructure.memory_book_repository import InMemoryBookRepository
+from infrastructure.repository_factory import create_repository
+from infrastructure.repository_registry import register
 
-DATA_FILE = Path(__file__).parent / "library.json"
 
+def create_app(settings: AppSettings | None = None) -> FastAPI:
+    """Create a FastAPI app wired to a repository adapter.
 
-def create_app(data_file: Path = DATA_FILE) -> FastAPI:
-    """Create a FastAPI app wired to a JSON repository adapter."""
-    repo = JsonBookRepository(data_file)
+    Args:
+        settings: Application settings. If None, defaults are used with
+            ``DATABASE_URL=memory://`` for backward compatibility.
+
+    Returns:
+        Configured FastAPI application.
+    """
+    if settings is None:
+        settings = AppSettings(DATABASE_URL="memory://")
+
+    # Register all known repository backends
+    register("memory", InMemoryBookRepository)
+    register("json", JsonBookRepository)
+
+    repo = create_repository(settings)
 
     app = FastAPI()
     app.include_router(books_router)

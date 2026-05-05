@@ -39,9 +39,12 @@ class JsonBookRepository(BookRepository):
         self._data_file = data_file
         self._lock = threading.Lock()
 
-    def list(self) -> builtins.list[Book]:
-        """List all books."""
-        return self._load_books()
+    def list(
+        self, limit: int = 20, offset: int = 0
+    ) -> builtins.list[Book]:
+        """List books with pagination."""
+        books = self._load_books()
+        return books[offset : offset + limit]
 
     def get(self, book_id: str) -> Book | None:
         """Get a book by id."""

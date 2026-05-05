@@ -1,5 +1,7 @@
 fastapi[standard]
+pydantic-settings>=2.0.0
 pytest>=9.0.3
 python-dotenv
 ruff
+structlog>=24.0.0
 ty

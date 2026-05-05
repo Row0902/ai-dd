@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 
 from domain.entities import Book
 from domain.exceptions import ValidationError
+from domain.validation_rules import MAX_URL_LENGTH
 from domain.validators.protocol import Validator
 
 
@@ -15,9 +16,12 @@ class BookUrlValidator(Validator[Book]):
         errors: list[ValidationError] = []
         if not entity.url:
             return errors
-        if len(entity.url) > 2048:
+        if len(entity.url) > MAX_URL_LENGTH:
             errors.append(
-                ValidationError(field="url", message="URL exceeds 2048 characters")
+                ValidationError(
+                    field="url",
+                    message=f"URL exceeds {MAX_URL_LENGTH} characters",
+                )
             )
             return errors
         parsed = urlparse(entity.url)

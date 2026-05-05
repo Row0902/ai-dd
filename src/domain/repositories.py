@@ -16,11 +16,17 @@ class BookRepository(ABC):
     """
 
     @abstractmethod
-    def list(self) -> builtins.list[Book]:
-        """List all books.
+    def list(
+        self, limit: int = 20, offset: int = 0
+    ) -> builtins.list[Book]:
+        """List books with pagination.
+
+        Args:
+            limit: Maximum number of books to return (default 20).
+            offset: Number of books to skip (default 0).
 
         Returns:
-            List of all Book entities.
+            List of Book entities for the requested page.
         """
 
     @abstractmethod
