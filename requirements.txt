@@ -3,6 +3,8 @@ pydantic-settings>=2.0.0
 pytest>=9.0.3
 pytest-asyncio>=0.24.0
 aiosqlite>=0.20.0
+bcrypt>=4.1.0
+pyjwt>=2.8.0
 python-dotenv
 ruff
 structlog>=24.0.0
