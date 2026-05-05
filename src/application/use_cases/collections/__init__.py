@@ -1,0 +1,1 @@
+"""Collections use cases."""
