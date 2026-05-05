@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from urllib.parse import urlparse
+
 from config.settings import AppSettings
 from domain.auth.ports import (
     InvitationRepository,
@@ -12,6 +14,7 @@ from domain.auth.ports import (
 )
 from domain.collections.repositories import CollectionRepository
 from domain.favorites.repositories import FavoriteRepository
+from domain.rate_limiting.ports import RateLimiter
 from domain.repositories import BookRepository
 from infrastructure.auth.bcrypt_password_hasher import BcryptPasswordHasher
 from infrastructure.auth.in_memory_invitation_repository import (
@@ -28,6 +31,9 @@ from infrastructure.persistence.in_memory_collection_repository import (
 from infrastructure.persistence.in_memory_favorite_repository import (
     InMemoryFavoriteRepository,
 )
+from infrastructure.rate_limiting.noop_rate_limiter import NoOpRateLimiter
+from infrastructure.rate_limiting.redis_client import create_redis_client
+from infrastructure.rate_limiting.redis_rate_limiter import RedisRateLimiter
 
 _settings: AppSettings | None = None
 
@@ -38,6 +44,7 @@ _password_hasher: PasswordHasher | None = None
 _notification_service: NotificationService | None = None
 _collection_repo: CollectionRepository | None = None
 _favorite_repo: FavoriteRepository | None = None
+_rate_limiter: RateLimiter | None = None
 
 
 def get_settings() -> AppSettings:
@@ -142,11 +149,57 @@ def get_favorite_repo() -> FavoriteRepository:
     return _favorite_repo
 
 
+def get_redis_client(settings: AppSettings | None = None):
+    """Provide an async Redis client from application settings.
+
+    Args:
+        settings: Application settings. If None, uses get_settings().
+
+    Returns:
+        A ``redis.asyncio.Redis`` client instance.
+    """
+    if settings is None:
+        settings = get_settings()
+    return create_redis_client(settings)
+
+
+def get_rate_limiter() -> RateLimiter:
+    """Provide a RateLimiter implementation based on settings.
+
+    Resolution order:
+    1. ``RATE_LIMIT_ENABLED=False`` → NoOpRateLimiter
+    2. ``DATABASE_URL=memory://`` → NoOpRateLimiter
+    3. Otherwise → RedisRateLimiter
+
+    Returns:
+        A RateLimiter implementation (singleton).
+    """
+    global _rate_limiter
+    if _rate_limiter is not None:
+        return _rate_limiter
+
+    settings = get_settings()
+
+    if not settings.RATE_LIMIT_ENABLED:
+        _rate_limiter = NoOpRateLimiter()
+        return _rate_limiter
+
+    scheme = urlparse(settings.DATABASE_URL).scheme or "memory"
+    if scheme == "memory":
+        _rate_limiter = NoOpRateLimiter()
+        return _rate_limiter
+
+    redis_client = get_redis_client(settings)
+    _rate_limiter = RedisRateLimiter(redis_client)
+    return _rate_limiter
+
+
 def _reset_repos() -> None:
     """Reset all singleton repository instances.
 
     Called during test setup to ensure test isolation.
     """
-    global _collection_repo, _favorite_repo
+    global _collection_repo, _favorite_repo, _rate_limiter
     _collection_repo = None
     _favorite_repo = None
+    _rate_limiter = None
