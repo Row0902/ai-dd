@@ -14,7 +14,7 @@ from domain.validators.protocol import Validator
 from .create_book import _validate_or_raise
 
 
-def update_book(
+async def update_book(
     repo: BookRepository,
     book_id: str,
     *,
@@ -47,7 +47,7 @@ def update_book(
     Raises:
         DomainError: When validator is provided and validation fails.
     """
-    current = repo.get(book_id)
+    current = await repo.get(book_id)
     if current is None:
         return None
 
@@ -60,4 +60,4 @@ def update_book(
         content=current.content if content is None else content,
     )
     _validate_or_raise(validator, updated)
-    return repo.update(book_id, updated)
+    return await repo.update(book_id, updated)

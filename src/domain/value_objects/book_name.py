@@ -1,15 +1,17 @@
-"""BookName value object: frozen, validates non-empty, max 200 chars."""
+"""BookName value object: frozen, validates non-empty, max title length."""
 
 from dataclasses import dataclass
 
 from domain.exceptions import ValidationError
+from domain.validation_rules import MAX_TITLE_LENGTH
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class BookName:
     """Immutable book title value object.
 
-    Validates on construction: non-empty after stripping, max 200 characters.
+    Validates on construction: non-empty after stripping, max title length
+    from ``validation_rules.MAX_TITLE_LENGTH``.
 
     Attributes:
         value: The validated, trimmed book title.
@@ -25,6 +27,9 @@ class BookName:
             raise ValidationError(
                 field="name", message="Name cannot be empty or whitespace"
             )
-        if len(trimmed) > 200:
-            raise ValidationError(field="name", message="Name exceeds 200 characters")
+        if len(trimmed) > MAX_TITLE_LENGTH:
+            raise ValidationError(
+                field="name",
+                message=f"Name exceeds {MAX_TITLE_LENGTH} characters",
+            )
         object.__setattr__(self, "value", trimmed)

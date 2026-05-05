@@ -2,15 +2,13 @@
 
 from __future__ import annotations
 
-from typing import TypeVar
+from typing import override
 
 from domain.exceptions import ValidationError
 from domain.validators.protocol import Validator
 
-T = TypeVar("T")
 
-
-class CompositeValidator(Validator[T]):
+class CompositeValidator[T](Validator[T]):
     """Aggregates multiple validators into a single flat validation pass.
 
     Runs all validators (no short-circuit) and collects all errors.
@@ -24,6 +22,7 @@ class CompositeValidator(Validator[T]):
         """
         self._validators = validators
 
+    @override
     def validate(self, entity: T) -> list[ValidationError]:
         """Run all validators and aggregate errors.
 

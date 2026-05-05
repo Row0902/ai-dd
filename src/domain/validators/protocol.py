@@ -3,11 +3,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TypeVar
 
 from domain.exceptions import ValidationError
-
-T = TypeVar("T")
 
 
 class Validator[T](ABC):

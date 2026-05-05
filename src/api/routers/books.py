@@ -8,10 +8,13 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import Response
 
 from api.dependencies import get_book_repo
 from api.mappers import book_to_dict
+from api.middleware.auth import require_permission
+from api.middleware.rate_limit import global_rate_limit
 from api.schemas import BookPayload
 from application.use_cases.create_book import create_book
 from application.use_cases.delete_book import delete_book
@@ -19,42 +22,65 @@ from application.use_cases.list_books import list_books
 from application.use_cases.read_book import get_book
 from application.use_cases.replace_book import replace_book
 from application.use_cases.search_books import get_books_by_name
+from domain.auth.permissions import Operation
 from domain.repositories import BookRepository
 
-router = APIRouter()
+router = APIRouter(tags=["books"])
 
 
 @router.get("/books")
-def list_books_endpoint(repo: Annotated[BookRepository, Depends(get_book_repo)]):
-    """List all books."""
-    return [book_to_dict(b) for b in list_books(repo)]
+async def list_books_endpoint(
+    repo: Annotated[BookRepository, Depends(get_book_repo)],
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    user: dict = Depends(require_permission(Operation.BOOK_READ)),
+    _rate_limit: None = Depends(global_rate_limit),
+):
+    """List books with pagination.
+
+    Args:
+        repo: Repository port injected via dependency.
+        limit: Maximum number of books to return (1-100, default 20).
+        offset: Number of books to skip (default 0).
+        user: Current user claims from auth middleware.
+    """
+    return [book_to_dict(b) for b in await list_books(repo, limit=limit, offset=offset)]
 
 
 @router.get("/books/{book_id}")
-def get_book_endpoint(
-    book_id: str, repo: Annotated[BookRepository, Depends(get_book_repo)]
+async def get_book_endpoint(
+    book_id: str,
+    repo: Annotated[BookRepository, Depends(get_book_repo)],
+    user: dict = Depends(require_permission(Operation.BOOK_READ)),
+    _rate_limit: None = Depends(global_rate_limit),
 ):
     """Get a book by id."""
-    book = get_book(repo, book_id)
+    book = await get_book(repo, book_id)
     if book is not None:
         return book_to_dict(book)
     raise HTTPException(status_code=404, detail="Not found")
 
 
 @router.get("/books/by-name/{name}")
-def get_books_by_name_endpoint(
-    name: str, repo: Annotated[BookRepository, Depends(get_book_repo)]
+async def get_books_by_name_endpoint(
+    name: str,
+    repo: Annotated[BookRepository, Depends(get_book_repo)],
+    user: dict = Depends(require_permission(Operation.BOOK_READ)),
+    _rate_limit: None = Depends(global_rate_limit),
 ):
     """Search books by name (case-insensitive substring match)."""
-    return [book_to_dict(b) for b in get_books_by_name(repo, name)]
+    return [book_to_dict(b) for b in await get_books_by_name(repo, name)]
 
 
-@router.post("/books")
-def create_book_endpoint(
-    book: BookPayload, repo: Annotated[BookRepository, Depends(get_book_repo)]
+@router.post("/books", status_code=201)
+async def create_book_endpoint(
+    book: BookPayload,
+    repo: Annotated[BookRepository, Depends(get_book_repo)],
+    user: dict = Depends(require_permission(Operation.BOOK_CREATE)),
+    _rate_limit: None = Depends(global_rate_limit),
 ):
     """Create a book."""
-    created = create_book(
+    created = await create_book(
         repo,
         name=book.name,
         author=book.author,
@@ -66,13 +92,15 @@ def create_book_endpoint(
 
 
 @router.put("/books/{book_id}")
-def replace_book_endpoint(
+async def replace_book_endpoint(
     book_id: str,
     book: BookPayload,
     repo: Annotated[BookRepository, Depends(get_book_repo)],
+    user: dict = Depends(require_permission(Operation.BOOK_UPDATE)),
+    _rate_limit: None = Depends(global_rate_limit),
 ):
     """Replace a book (PUT semantics)."""
-    updated = replace_book(
+    updated = await replace_book(
         repo,
         book_id,
         name=book.name,
@@ -86,16 +114,19 @@ def replace_book_endpoint(
     raise HTTPException(status_code=404, detail="Not found")
 
 
-@router.delete("/books/{book_id}")
-def delete_book_endpoint(
-    book_id: str, repo: Annotated[BookRepository, Depends(get_book_repo)]
+@router.delete("/books/{book_id}", status_code=204)
+async def delete_book_endpoint(
+    book_id: str,
+    repo: Annotated[BookRepository, Depends(get_book_repo)],
+    user: dict = Depends(require_permission(Operation.BOOK_DELETE)),
+    _rate_limit: None = Depends(global_rate_limit),
 ):
     """Delete a book."""
-    existing = get_book(repo, book_id)
+    existing = await get_book(repo, book_id)
     if existing is None:
         raise HTTPException(status_code=404, detail="Not found")
 
-    deleted = delete_book(repo, book_id)
+    deleted = await delete_book(repo, book_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Not found")
-    return {"deleted": book_to_dict(existing)}
+    return Response(status_code=204)

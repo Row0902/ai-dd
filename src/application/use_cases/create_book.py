@@ -11,7 +11,7 @@ from domain.repositories import BookRepository
 from domain.validators.protocol import Validator
 
 
-def create_book(
+async def create_book(
     repo: BookRepository,
     *,
     name: str,
@@ -50,7 +50,7 @@ def create_book(
         content=content,
     )
     _validate_or_raise(validator, draft)
-    return repo.create(draft)
+    return await repo.create(draft)
 
 
 def _validate_or_raise(validator: Validator[Book] | None, draft: Book) -> None:

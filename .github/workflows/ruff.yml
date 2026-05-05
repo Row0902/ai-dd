@@ -18,23 +18,19 @@ jobs:
           python-version: "3.13"
 
       - name: Set up uv
-        # Pinned to v8.1.0 (Astral recommends pinning for reproducibility)
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
         with:
           enable-cache: true
-          activate-environment: true
 
       - name: Install dependencies
-        run: uv pip install -r requirements.txt
+        run: uv sync --frozen
 
       - name: Ruff format (check)
-        # Pinned to v4.0.0
         uses: astral-sh/ruff-action@0ce1b0bf8b818ef400413f810f8a11cdbda0034b
         with:
           args: "format --check --diff"
 
       - name: Ruff lint
-        # Pinned to v4.0.0
         uses: astral-sh/ruff-action@0ce1b0bf8b818ef400413f810f8a11cdbda0034b
         with:
           args: "check"

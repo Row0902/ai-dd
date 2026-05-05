@@ -3,12 +3,24 @@ name = "ai-dd"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.14"
-dependencies = ["fastapi[standard]>=0.135.3", "python-dotenv>=1.2.2"]
+requires-python = ">=3.13"
+dependencies = [
+    "aiosqlite>=0.20.0",
+    "bcrypt>=4.1.0",
+    "fastapi[standard]>=0.135.3",
+    "pydantic-settings>=2.0.0",
+    "pyjwt>=2.8.0",
+    "python-dotenv>=1.2.2",
+    "sqlmodel>=0.0.22",
+    "redis[hiredis]>=5.0",
+    "structlog>=24.0.0",
+]
 
 [dependency-groups]
 dev = [
+    "fakeredis[lua]>=2.21",
     "pytest>=9.0.3",
+    "pytest-asyncio>=0.24.0",
     "pytest-cov>=7.1.0",
     "ruff>=0.15.10",
     "ty>=0.0.29",
@@ -18,7 +30,7 @@ dev = [
 fix = true
 indent-width = 4
 line-length = 88
-target-version = "py314"
+target-version = "py313"
 
 [tool.ruff.analyze]
 detect-string-imports = true
@@ -32,7 +44,7 @@ quote-style = "double"
 [tool.ruff.lint]
 extend-select = ["B", "D", "I", "N", "Q", "UP"]
 
-ignore = ["D203", "D213", "D104"]
+ignore = ["D203", "D213", "D104", "B008"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -42,7 +54,7 @@ all = "error"
 unused-ignore-comment = "warn"
 
 [tool.ty.environment]
-python-version = "3.14"
+python-version = "3.13"
 root = ["./src"]
 
 [tool.ty.terminal]
@@ -57,5 +69,6 @@ possibly-unresolved-reference = "warn"
 
 [tool.pytest.ini_options]
 addopts = "-ra -q"
+asyncio_mode = "auto"
 pythonpath = ["src"]
-testpaths = ["src/test"]
+testpaths = ["tests"]

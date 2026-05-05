@@ -16,15 +16,19 @@ class BookRepository(ABC):
     """
 
     @abstractmethod
-    def list(self) -> builtins.list[Book]:
-        """List all books.
+    async def list(self, limit: int = 20, offset: int = 0) -> builtins.list[Book]:
+        """List books with pagination.
+
+        Args:
+            limit: Maximum number of books to return (default 20).
+            offset: Number of books to skip (default 0).
 
         Returns:
-            List of all Book entities.
+            List of Book entities for the requested page.
         """
 
     @abstractmethod
-    def get(self, book_id: str) -> Book | None:
+    async def get(self, book_id: str) -> Book | None:
         """Get a book by ID.
 
         Args:
@@ -35,7 +39,7 @@ class BookRepository(ABC):
         """
 
     @abstractmethod
-    def get_by_name(self, name: str) -> builtins.list[Book]:
+    async def get_by_name(self, name: str) -> builtins.list[Book]:
         """Search books by name (case-insensitive substring match).
 
         Args:
@@ -46,7 +50,7 @@ class BookRepository(ABC):
         """
 
     @abstractmethod
-    def create(self, book: Book) -> Book:
+    async def create(self, book: Book) -> Book:
         """Create a new book.
 
         Args:
@@ -57,7 +61,7 @@ class BookRepository(ABC):
         """
 
     @abstractmethod
-    def update(self, book_id: str, book: Book) -> Book | None:
+    async def update(self, book_id: str, book: Book) -> Book | None:
         """Update an existing book.
 
         Args:
@@ -69,7 +73,7 @@ class BookRepository(ABC):
         """
 
     @abstractmethod
-    def delete(self, book_id: str) -> bool:
+    async def delete(self, book_id: str) -> bool:
         """Delete a book.
 
         Args:

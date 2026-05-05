@@ -9,13 +9,17 @@ from domain.entities import Book
 from domain.repositories import BookRepository
 
 
-def list_books(repo: BookRepository) -> list[Book]:
-    """Return all books.
+async def list_books(
+    repo: BookRepository, limit: int = 20, offset: int = 0
+) -> list[Book]:
+    """Return books with pagination.
 
     Args:
         repo: Repository port.
+        limit: Maximum number of books to return (default 20).
+        offset: Number of books to skip (default 0).
 
     Returns:
-        List of all books.
+        Paginated list of books.
     """
-    return repo.list()
+    return await repo.list(limit=limit, offset=offset)

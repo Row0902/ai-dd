@@ -1,17 +1,18 @@
-"""BookUrl value object: frozen, validates URL format, max 2048 chars."""
+"""BookUrl value object: frozen, validates URL format, max URL length."""
 
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
 from domain.exceptions import ValidationError
+from domain.validation_rules import MAX_URL_LENGTH
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class BookUrl:
     """Immutable URL value object.
 
     Validates on construction: non-empty, valid URL format (via urllib.parse),
-    max 2048 characters.
+    max URL length from ``validation_rules.MAX_URL_LENGTH``.
 
     Attributes:
         value: The validated URL string.
@@ -23,8 +24,11 @@ class BookUrl:
         """Validate the URL on construction."""
         if not self.value.strip():
             raise ValidationError(field="url", message="Invalid URL format")
-        if len(self.value) > 2048:
-            raise ValidationError(field="url", message="URL exceeds 2048 characters")
+        if len(self.value) > MAX_URL_LENGTH:
+            raise ValidationError(
+                field="url",
+                message=f"URL exceeds {MAX_URL_LENGTH} characters",
+            )
         parsed = urlparse(self.value)
         if not parsed.scheme or not parsed.netloc:
             raise ValidationError(field="url", message="Invalid URL format")
