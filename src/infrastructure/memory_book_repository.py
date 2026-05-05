@@ -10,6 +10,7 @@ from __future__ import annotations
 import builtins
 import threading
 import uuid
+from typing import override
 
 from domain.entities import Book
 from domain.repositories import BookRepository
@@ -26,6 +27,7 @@ class InMemoryBookRepository(BookRepository):
         self._books: dict[str, Book] = {}
         self._lock = threading.Lock()
 
+    @override
     async def list(self, limit: int = 20, offset: int = 0) -> builtins.list[Book]:
         """List books with pagination.
 
@@ -39,6 +41,7 @@ class InMemoryBookRepository(BookRepository):
         books = list(self._books.values())
         return books[offset : offset + limit]
 
+    @override
     async def get(self, book_id: str) -> Book | None:
         """Get a book by ID.
 
@@ -50,6 +53,7 @@ class InMemoryBookRepository(BookRepository):
         """
         return self._books.get(book_id)
 
+    @override
     async def get_by_name(self, name: str) -> builtins.list[Book]:
         """Search books by case-insensitive substring match on name.
 
@@ -62,6 +66,7 @@ class InMemoryBookRepository(BookRepository):
         needle = name.lower()
         return [b for b in self._books.values() if needle in b.name.lower()]
 
+    @override
     async def create(self, book: Book) -> Book:
         """Create a new book.
 
@@ -85,6 +90,7 @@ class InMemoryBookRepository(BookRepository):
             self._books[created.id] = created
             return created
 
+    @override
     async def update(self, book_id: str, book: Book) -> Book | None:
         """Update an existing book.
 
@@ -109,6 +115,7 @@ class InMemoryBookRepository(BookRepository):
             self._books[book_id] = updated
             return updated
 
+    @override
     async def delete(self, book_id: str) -> bool:
         """Delete a book by id.
 

@@ -16,7 +16,7 @@ import logging
 import threading
 import uuid
 from pathlib import Path
-from typing import Any
+from typing import Any, override
 
 from domain.entities import Book
 from domain.exceptions import DomainError
@@ -39,11 +39,13 @@ class JsonBookRepository(BookRepository):
         self._data_file = data_file
         self._lock = threading.Lock()
 
+    @override
     async def list(self, limit: int = 20, offset: int = 0) -> builtins.list[Book]:
         """List books with pagination."""
         books = self._load_books()
         return books[offset : offset + limit]
 
+    @override
     async def get(self, book_id: str) -> Book | None:
         """Get a book by id."""
         for book in self._load_books():
@@ -51,11 +53,13 @@ class JsonBookRepository(BookRepository):
                 return book
         return None
 
+    @override
     async def get_by_name(self, name: str) -> builtins.list[Book]:
         """Search books by case-insensitive substring match on name."""
         needle = name.lower()
         return [b for b in self._load_books() if needle in b.name.lower()]
 
+    @override
     async def create(self, book: Book) -> Book:
         """Create a new book.
 
@@ -75,6 +79,7 @@ class JsonBookRepository(BookRepository):
             self._save_books_unlocked(books)
             return created
 
+    @override
     async def update(self, book_id: str, book: Book) -> Book | None:
         """Update an existing book.
 
@@ -98,6 +103,7 @@ class JsonBookRepository(BookRepository):
                     return updated
             return None
 
+    @override
     async def delete(self, book_id: str) -> bool:
         """Delete a book by id."""
         with self._lock:

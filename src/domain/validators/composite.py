@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import override
+
 from domain.exceptions import ValidationError
 from domain.validators.protocol import Validator
 
@@ -20,6 +22,7 @@ class CompositeValidator[T](Validator[T]):
         """
         self._validators = validators
 
+    @override
     def validate(self, entity: T) -> list[ValidationError]:
         """Run all validators and aggregate errors.
 

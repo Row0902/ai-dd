@@ -1,7 +1,7 @@
 """JWT-based token service implementing the TokenService port."""
 
 import time
-from typing import Any
+from typing import Any, override
 
 import jwt
 
@@ -37,6 +37,7 @@ class JwtTokenService(TokenService):
         self.algorithm = algorithm
         self.expire_minutes = expire_minutes
 
+    @override
     def generate(self, user_id: str, role: str) -> str:
         """Generate a signed JWT for the given user.
 
@@ -56,6 +57,7 @@ class JwtTokenService(TokenService):
         }
         return jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
 
+    @override
     def verify(self, token: str) -> dict:
         """Verify a JWT and return its claims.
 

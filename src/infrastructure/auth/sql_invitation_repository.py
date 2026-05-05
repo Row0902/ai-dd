@@ -8,6 +8,7 @@ inline.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import override
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -35,6 +36,7 @@ class SQLInvitationRepository(InvitationRepository):
         """
         self._session = session
 
+    @override
     async def save(self, invitation: Invitation) -> Invitation:
         """Persist an invitation and return the saved entity.
 
@@ -59,6 +61,7 @@ class SQLInvitationRepository(InvitationRepository):
         await self._session.refresh(model)
         return _to_domain(model)
 
+    @override
     async def find_by_token(self, token: str) -> Invitation | None:
         """Find an invitation by its UUID4 token.
 
@@ -75,6 +78,7 @@ class SQLInvitationRepository(InvitationRepository):
             return None
         return _to_domain(model)
 
+    @override
     async def mark_as_used(self, token: str) -> bool:
         """Mark an invitation as consumed.
 

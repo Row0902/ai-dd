@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import builtins
+from typing import override
 
 from domain.collections.entities import Collection
 from domain.collections.repositories import CollectionRepository
@@ -15,6 +16,7 @@ class InMemoryCollectionRepository(CollectionRepository):
         """Initialize empty in-memory store."""
         self._collections: dict[str, Collection] = {}
 
+    @override
     async def save(self, collection: Collection) -> Collection:
         """Save (create or update) a collection.
 
@@ -27,6 +29,7 @@ class InMemoryCollectionRepository(CollectionRepository):
         self._collections[collection.id] = collection
         return collection
 
+    @override
     async def find_by_id(self, collection_id: str) -> Collection | None:
         """Find a collection by ID.
 
@@ -38,6 +41,7 @@ class InMemoryCollectionRepository(CollectionRepository):
         """
         return self._collections.get(collection_id)
 
+    @override
     async def find_by_owner_id(self, owner_id: str) -> builtins.list[Collection]:
         """Find all collections owned by a user.
 
@@ -49,6 +53,7 @@ class InMemoryCollectionRepository(CollectionRepository):
         """
         return [c for c in self._collections.values() if c.owner_id == owner_id]
 
+    @override
     async def list_all(self) -> builtins.list[Collection]:
         """List all collections.
 
@@ -57,6 +62,7 @@ class InMemoryCollectionRepository(CollectionRepository):
         """
         return list(self._collections.values())
 
+    @override
     async def delete(self, collection_id: str) -> bool:
         """Delete a collection by ID.
 
