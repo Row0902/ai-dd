@@ -17,7 +17,7 @@ class UserRole(StrEnum):
     USER = "user"
 
 
-@dataclass
+@dataclass(slots=True)
 class User:
     """User entity in the auth domain.
 
@@ -38,7 +38,7 @@ class User:
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
-@dataclass
+@dataclass(slots=True)
 class Invitation:
     """Invitation entity for onboarding new users.
 

@@ -7,7 +7,7 @@ from domain.value_objects.book_name import BookName
 from domain.value_objects.book_url import BookUrl
 
 
-@dataclass
+@dataclass(slots=True)
 class Book:
     """Book entity in the domain model.
 
