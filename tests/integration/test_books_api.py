@@ -154,9 +154,7 @@ class TestBooksApi:
     def test_post_whitespace_name_returns_422(self) -> None:
         """POST /books rejects whitespace-only name with 422."""
         client = _client()
-        resp = client.post(
-            "/books", json={"name": "   "}, headers=_auth_headers()
-        )
+        resp = client.post("/books", json={"name": "   "}, headers=_auth_headers())
         assert resp.status_code == 422
 
     def test_post_malformed_url_returns_422(self) -> None:

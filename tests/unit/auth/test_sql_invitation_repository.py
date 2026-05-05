@@ -20,6 +20,7 @@ async def db_session():
 
     engine = create_engine_from_url("sqlite://")
     import infrastructure.auth.sql_models  # noqa: F401
+
     await create_tables(engine)
     async with get_session(engine) as session:
         yield session

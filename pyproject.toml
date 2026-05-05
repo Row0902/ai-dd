@@ -3,7 +3,7 @@ name = "ai-dd"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 dependencies = [
     "aiosqlite>=0.20.0",
     "bcrypt>=4.1.0",
@@ -28,7 +28,7 @@ dev = [
 fix = true
 indent-width = 4
 line-length = 88
-target-version = "py311"
+target-version = "py313"
 
 [tool.ruff.analyze]
 detect-string-imports = true
@@ -52,7 +52,7 @@ all = "error"
 unused-ignore-comment = "warn"
 
 [tool.ty.environment]
-python-version = "3.11"
+python-version = "3.13"
 root = ["./src"]
 
 [tool.ty.terminal]

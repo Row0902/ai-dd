@@ -81,9 +81,7 @@ async def list_collections_endpoint(
     role = user["role"]
     if isinstance(role, str):
         role = UserRole(role)
-    cols = await list_collections(
-        repo, user_id=user["user_id"], role=role
-    )
+    cols = await list_collections(repo, user_id=user["user_id"], role=role)
     return [_collection_to_dict(c) for c in cols]
 
 

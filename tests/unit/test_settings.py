@@ -1,6 +1,5 @@
 """Tests for config.settings: pydantic-settings AppSettings."""
 
-
 import pytest
 
 from config.settings import AppSettings
@@ -16,9 +15,7 @@ class TestAppSettingsDefaults:
         settings = AppSettings()
         assert settings.DATABASE_URL == "memory://"
 
-    def test_access_token_expire_minutes_default(
-        self, monkeypatch: pytest.MonkeyPatch
-    ):
+    def test_access_token_expire_minutes_default(self, monkeypatch: pytest.MonkeyPatch):
         """ACCESS_TOKEN_EXPIRE_MINUTES defaults to 30."""
         monkeypatch.setenv("SECRET_KEY", "a" * 32)
         settings = AppSettings()
@@ -70,9 +67,7 @@ class TestAppSettingsValidation:
         with pytest.raises(ValueError, match="SECRET_KEY"):
             AppSettings()
 
-    def test_secret_key_exactly_32_chars_passes(
-        self, monkeypatch: pytest.MonkeyPatch
-    ):
+    def test_secret_key_exactly_32_chars_passes(self, monkeypatch: pytest.MonkeyPatch):
         """SECRET_KEY with exactly 32 chars is accepted."""
         monkeypatch.setenv("SECRET_KEY", "a" * 32)
         settings = AppSettings()

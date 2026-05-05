@@ -20,9 +20,7 @@ class LoggingNotificationService(NotificationService):
     first 8 characters are emitted.
     """
 
-    async def send_invitation(
-        self, email: str, token: str, inviter_name: str
-    ) -> None:
+    async def send_invitation(self, email: str, token: str, inviter_name: str) -> None:
         """Log an invitation notification.
 
         Args:

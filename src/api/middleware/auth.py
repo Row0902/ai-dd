@@ -67,9 +67,7 @@ def require_permission(operation: Operation):
                 status_code=403, detail="Insufficient permissions"
             ) from exc
         if operation not in ROLE_PERMISSIONS.get(role, set()):
-            raise HTTPException(
-                status_code=403, detail="Insufficient permissions"
-            )
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
         ctx = {"user_id": claims["sub"], "role": role}
         if request:
             request.state.user_id = claims["sub"]

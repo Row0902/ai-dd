@@ -47,9 +47,7 @@ class InMemoryCollectionRepository(CollectionRepository):
         Returns:
             List of collections owned by the user.
         """
-        return [
-            c for c in self._collections.values() if c.owner_id == owner_id
-        ]
+        return [c for c in self._collections.values() if c.owner_id == owner_id]
 
     async def list_all(self) -> builtins.list[Collection]:
         """List all collections.

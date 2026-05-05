@@ -19,6 +19,7 @@ async def db_session():
     engine = create_engine_from_url("sqlite://")
     # Import auth models so they register with SQLModel metadata
     import infrastructure.auth.sql_models  # noqa: F401
+
     await create_tables(engine)
     async with get_session(engine) as session:
         yield session

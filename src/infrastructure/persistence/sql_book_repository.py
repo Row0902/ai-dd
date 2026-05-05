@@ -39,9 +39,7 @@ class SQLBookRepository(BookRepository):
         """
         self._session = session
 
-    async def list(
-        self, limit: int = 20, offset: int = 0
-    ) -> builtins.list[Book]:
+    async def list(self, limit: int = 20, offset: int = 0) -> builtins.list[Book]:
         """List books with SQL LIMIT/OFFSET pagination.
 
         Args:
@@ -82,9 +80,7 @@ class SQLBookRepository(BookRepository):
             List of matching domain Book entities.
         """
         needle = f"%{name.lower()}%"
-        statement = select(BookModel).where(
-            func.lower(BookModel.name).like(needle)
-        )
+        statement = select(BookModel).where(func.lower(BookModel.name).like(needle))
         result = await self._session.execute(statement)
         models = result.scalars().all()
         return [BookMapper.to_domain(m) for m in models]

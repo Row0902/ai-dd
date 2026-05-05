@@ -73,9 +73,7 @@ class SQLCollectionRepository(CollectionRepository):
         Returns:
             List of collections owned by the user.
         """
-        statement = select(CollectionModel).where(
-            column("owner_id") == owner_id
-        )
+        statement = select(CollectionModel).where(column("owner_id") == owner_id)
         result = await self._session.execute(statement)
         models = result.scalars().all()
         return [CollectionMapper.to_domain(m) for m in models]

@@ -50,9 +50,7 @@ class TestRequirePermission:
         )
 
         client = TestClient(app)
-        resp = client.get(
-            "/protected", headers={"Authorization": f"Bearer {token}"}
-        )
+        resp = client.get("/protected", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 200
         body = resp.json()
         assert body["user_id"] == "user-123"

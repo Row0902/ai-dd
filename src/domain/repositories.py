@@ -16,9 +16,7 @@ class BookRepository(ABC):
     """
 
     @abstractmethod
-    async def list(
-        self, limit: int = 20, offset: int = 0
-    ) -> builtins.list[Book]:
+    async def list(self, limit: int = 20, offset: int = 0) -> builtins.list[Book]:
         """List books with pagination.
 
         Args:
