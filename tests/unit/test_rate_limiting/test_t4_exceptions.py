@@ -29,14 +29,14 @@ class TestRateLimitExceededError:
         """RateLimitExceededError carries a retry_after integer field."""
         from domain.rate_limiting.exceptions import RateLimitExceededError
 
-        exc = RateLimitExceededError(retry_after=30)
+        exc = RateLimitExceededError(retry_after=30, limit=5)
         assert exc.retry_after == 30
 
     def test_exception_str_representation(self) -> None:
         """RateLimitExceededError has a readable string representation."""
         from domain.rate_limiting.exceptions import RateLimitExceededError
 
-        exc = RateLimitExceededError(retry_after=45)
+        exc = RateLimitExceededError(retry_after=45, limit=10)
         result = str(exc)
         assert "45" in result
         assert len(result) > 0
@@ -49,13 +49,13 @@ class TestRateLimitExceededError:
         from domain.rate_limiting.exceptions import RateLimitExceededError
 
         with pytest.raises(DomainError):
-            raise RateLimitExceededError(retry_after=10)
+            raise RateLimitExceededError(retry_after=10, limit=5)
 
     def test_exception_preserves_retry_after_after_raise(self) -> None:
         """retry_after field survives exception propagation."""
         from domain.rate_limiting.exceptions import RateLimitExceededError
 
         try:
-            raise RateLimitExceededError(retry_after=60)
+            raise RateLimitExceededError(retry_after=60, limit=10)
         except RateLimitExceededError as exc:
             assert exc.retry_after == 60

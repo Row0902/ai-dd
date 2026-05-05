@@ -6,6 +6,7 @@ to application use cases and persistence to infrastructure adapters.
 
 from __future__ import annotations
 
+import time
 from contextlib import asynccontextmanager
 from urllib.parse import urlparse
 
@@ -251,7 +252,12 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
         return JSONResponse(
             status_code=429,
             content={"detail": "Too many requests"},
-            headers={"Retry-After": str(exc.retry_after)},
+            headers={
+                "Retry-After": str(exc.retry_after),
+                "RateLimit-Limit": str(exc.limit),
+                "RateLimit-Remaining": "0",
+                "RateLimit-Reset": str(int(time.time()) + exc.retry_after),
+            },
         )
 
     @app.get("/")

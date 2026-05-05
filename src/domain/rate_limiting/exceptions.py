@@ -23,14 +23,16 @@ class RateLimitExceededError(DomainError):
 
     Attributes:
         retry_after: Seconds until the client may retry the request.
+        limit: Maximum requests allowed in the window (for response headers).
     """
 
     retry_after: int
+    limit: int
 
     def __str__(self) -> str:
         """Return a readable string representation."""
         return f"Rate limit exceeded. Retry after {self.retry_after} seconds."
 
     def __hash__(self) -> int:
-        """Make RateLimitExceededError hashable based on retry_after."""
-        return hash(self.retry_after)
+        """Make RateLimitExceededError hashable based on fields."""
+        return hash((self.retry_after, self.limit))

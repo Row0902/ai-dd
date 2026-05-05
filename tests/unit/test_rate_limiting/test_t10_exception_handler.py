@@ -57,7 +57,7 @@ class TestRateLimitExceptionHandler:
         }
         request = Request(scope)
 
-        exc = RateLimitExceededError(retry_after=60)
+        exc = RateLimitExceededError(retry_after=60, limit=10)
         import asyncio
 
         response = asyncio.run(handler(request, exc))
@@ -85,7 +85,7 @@ class TestRateLimitExceptionHandler:
         }
         request = Request(scope)
 
-        exc = RateLimitExceededError(retry_after=45)
+        exc = RateLimitExceededError(retry_after=45, limit=10)
         import asyncio
 
         response = asyncio.run(handler(request, exc))
