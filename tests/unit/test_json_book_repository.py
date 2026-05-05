@@ -22,57 +22,59 @@ def _repo(tmp_path: Path) -> JsonBookRepository:
 class TestJsonBookRepository:
     """Tests for JSON-backed repository."""
 
-    def test_missing_file_is_empty(self, tmp_path: Path) -> None:
+    async def test_missing_file_is_empty(self, tmp_path: Path) -> None:
         """Missing file behaves like an empty library."""
         repo = _repo(tmp_path)
-        assert repo.list() == []
+        assert await repo.list() == []
 
-    def test_create_assigns_id_when_missing(self, tmp_path: Path) -> None:
+    async def test_create_assigns_id_when_missing(self, tmp_path: Path) -> None:
         """Create assigns a UUID hex id if the entity id is empty."""
         repo = _repo(tmp_path)
-        created = repo.create(Book(id="", name="Clean Code"))
+        created = await repo.create(Book(id="", name="Clean Code"))
         assert created.id
-        assert repo.get(created.id) == created
+        assert await repo.get(created.id) == created
 
-    def test_get_by_name_is_case_insensitive_substring(self, tmp_path: Path) -> None:
+    async def test_get_by_name_is_case_insensitive_substring(
+        self, tmp_path: Path
+    ) -> None:
         """Search matches case-insensitive substrings in the name."""
         repo = _repo(tmp_path)
-        repo.create(Book(id="", name="Clean Code"))
-        repo.create(Book(id="", name="The Clean Coder"))
-        repo.create(Book(id="", name="DDD"))
-        res = repo.get_by_name("cLeAn")
+        await repo.create(Book(id="", name="Clean Code"))
+        await repo.create(Book(id="", name="The Clean Coder"))
+        await repo.create(Book(id="", name="DDD"))
+        res = await repo.get_by_name("cLeAn")
         assert sorted([b.name for b in res]) == ["Clean Code", "The Clean Coder"]
 
-    def test_update_replaces_full_representation(self, tmp_path: Path) -> None:
+    async def test_update_replaces_full_representation(self, tmp_path: Path) -> None:
         """Update stores the passed book as a full replacement."""
         repo = _repo(tmp_path)
-        created = repo.create(Book(id="", name="Old", author="a"))
-        updated = repo.update(created.id, Book(id="ignored", name="New"))
+        created = await repo.create(Book(id="", name="Old", author="a"))
+        updated = await repo.update(created.id, Book(id="ignored", name="New"))
         assert updated is not None
         assert updated.id == created.id
         assert updated.name == "New"
         assert updated.author == ""
 
-    def test_delete_returns_true_only_when_found(self, tmp_path: Path) -> None:
+    async def test_delete_returns_true_only_when_found(self, tmp_path: Path) -> None:
         """Delete returns True when it deletes an existing book."""
         repo = _repo(tmp_path)
-        created = repo.create(Book(id="", name="X"))
-        assert repo.delete(created.id) is True
-        assert repo.delete(created.id) is False
+        created = await repo.create(Book(id="", name="X"))
+        assert await repo.delete(created.id) is True
+        assert await repo.delete(created.id) is False
 
-    def test_corrupt_json_is_treated_as_empty(self, tmp_path: Path) -> None:
+    async def test_corrupt_json_is_treated_as_empty(self, tmp_path: Path) -> None:
         """Corrupt JSON is treated as empty to match monolith behavior."""
         path = tmp_path / "library.json"
         path.write_text("{not-json", encoding="utf-8")
         repo = JsonBookRepository(path)
-        assert repo.list() == []
+        assert await repo.list() == []
 
-    def test_non_list_json_is_treated_as_empty(self, tmp_path: Path) -> None:
+    async def test_non_list_json_is_treated_as_empty(self, tmp_path: Path) -> None:
         """Non-list JSON (e.g., object) is treated as empty."""
         path = tmp_path / "library.json"
         path.write_text(json.dumps({"x": 1}), encoding="utf-8")
         repo = JsonBookRepository(path)
-        assert repo.list() == []
+        assert await repo.list() == []
 
 
 class TestDictToBook:
@@ -107,7 +109,7 @@ class TestDictToBook:
         assert book.name == "Clean Code"
         assert book.author == "Bob"
 
-    def test_malformed_entries_skipped_in_list(self, tmp_path: Path) -> None:
+    async def test_malformed_entries_skipped_in_list(self, tmp_path: Path) -> None:
         """Malformed entries in JSON file are silently skipped during list."""
         path = tmp_path / "library.json"
         data = [
@@ -117,7 +119,7 @@ class TestDictToBook:
         ]
         path.write_text(json.dumps(data), encoding="utf-8")
         repo = JsonBookRepository(path)
-        books = repo.list()
+        books = await repo.list()
         assert len(books) == 2
         assert books[0].name == "Good Book"
         assert books[1].name == "Another Good Book"
@@ -126,46 +128,50 @@ class TestDictToBook:
 class TestListPagination:
     """Tests for list() pagination with limit and offset."""
 
-    def _create_books(self, repo: JsonBookRepository, count: int) -> None:
+    async def _create_books(self, repo: JsonBookRepository, count: int) -> None:
         """Helper to create N books."""
         for i in range(count):
-            repo.create(Book(id="", name=f"Book {i:02d}", author=f"Author {i}"))
+            await repo.create(
+                Book(id="", name=f"Book {i:02d}", author=f"Author {i}")
+            )
 
-    def test_list_default_limit_returns_all_when_fewer(self, tmp_path: Path) -> None:
+    async def test_list_default_limit_returns_all_when_fewer(
+        self, tmp_path: Path
+    ) -> None:
         """Default limit=20 returns all books when fewer exist."""
         repo = _repo(tmp_path)
-        self._create_books(repo, 5)
-        books = repo.list()
+        await self._create_books(repo, 5)
+        books = await repo.list()
         assert len(books) == 5
 
-    def test_list_limit_caps_results(self, tmp_path: Path) -> None:
+    async def test_list_limit_caps_results(self, tmp_path: Path) -> None:
         """list(limit=3) returns at most 3 books."""
         repo = _repo(tmp_path)
-        self._create_books(repo, 10)
-        books = repo.list(limit=3)
+        await self._create_books(repo, 10)
+        books = await repo.list(limit=3)
         assert len(books) == 3
         assert books[0].name == "Book 00"
 
-    def test_list_offset_skips_books(self, tmp_path: Path) -> None:
+    async def test_list_offset_skips_books(self, tmp_path: Path) -> None:
         """list(offset=2) skips the first 2 books."""
         repo = _repo(tmp_path)
-        self._create_books(repo, 5)
-        books = repo.list(offset=2)
+        await self._create_books(repo, 5)
+        books = await repo.list(offset=2)
         assert len(books) == 3
         assert books[0].name == "Book 02"
 
-    def test_list_limit_and_offset_together(self, tmp_path: Path) -> None:
+    async def test_list_limit_and_offset_together(self, tmp_path: Path) -> None:
         """list(limit=2, offset=3) returns books 3 and 4."""
         repo = _repo(tmp_path)
-        self._create_books(repo, 10)
-        books = repo.list(limit=2, offset=3)
+        await self._create_books(repo, 10)
+        books = await repo.list(limit=2, offset=3)
         assert len(books) == 2
         assert books[0].name == "Book 03"
         assert books[1].name == "Book 04"
 
-    def test_list_offset_beyond_end_returns_empty(self, tmp_path: Path) -> None:
+    async def test_list_offset_beyond_end_returns_empty(self, tmp_path: Path) -> None:
         """list(offset=100) on a 5-book repo returns empty list."""
         repo = _repo(tmp_path)
-        self._create_books(repo, 5)
-        books = repo.list(offset=100)
+        await self._create_books(repo, 5)
+        books = await repo.list(offset=100)
         assert books == []

@@ -1,6 +1,6 @@
 """SQL-backed book repository implementation.
 
-Implements the ``BookRepository`` port using SQLAlchemy sessions and
+Implements the ``BookRepository`` port using async SQLAlchemy sessions and
 the Data Mapper pattern (``BookMapper``). All persistence goes through
 the ``BookModel`` SQLModel table — domain ``Book`` entities are never
 directly persisted.
@@ -11,8 +11,8 @@ from __future__ import annotations
 import builtins
 import uuid
 
-from sqlalchemy import func
-from sqlmodel import Session, select
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from domain.entities import Book
 from domain.repositories import BookRepository
@@ -21,25 +21,25 @@ from infrastructure.persistence.sql_models import BookModel
 
 
 class SQLBookRepository(BookRepository):
-    """BookRepository backed by a SQL database via SQLAlchemy.
+    """BookRepository backed by a SQL database via async SQLAlchemy.
 
     Uses the Data Mapper pattern: domain Book ↔ BookModel translation
     is handled by ``BookMapper``. The session is injected via constructor
     for testability and per-request scoping.
 
     Args:
-        session: A SQLModel/SQLAlchemy Session instance.
+        session: An AsyncSession instance.
     """
 
-    def __init__(self, session: Session) -> None:
-        """Initialize with a database session.
+    def __init__(self, session: AsyncSession) -> None:
+        """Initialize with an async database session.
 
         Args:
-            session: Active SQLAlchemy session for database operations.
+            session: Active async SQLAlchemy session for database operations.
         """
         self._session = session
 
-    def list(
+    async def list(
         self, limit: int = 20, offset: int = 0
     ) -> builtins.list[Book]:
         """List books with SQL LIMIT/OFFSET pagination.
@@ -52,10 +52,11 @@ class SQLBookRepository(BookRepository):
             Paginated list of domain Book entities.
         """
         statement = select(BookModel).offset(offset).limit(limit)
-        models = self._session.exec(statement).all()
+        result = await self._session.execute(statement)
+        models = result.scalars().all()
         return [BookMapper.to_domain(m) for m in models]
 
-    def get(self, book_id: str) -> Book | None:
+    async def get(self, book_id: str) -> Book | None:
         """Get a book by ID.
 
         Args:
@@ -64,12 +65,12 @@ class SQLBookRepository(BookRepository):
         Returns:
             Book if found, None otherwise.
         """
-        model = self._session.get(BookModel, book_id)
+        model = await self._session.get(BookModel, book_id)
         if model is None:
             return None
         return BookMapper.to_domain(model)
 
-    def get_by_name(self, name: str) -> builtins.list[Book]:
+    async def get_by_name(self, name: str) -> builtins.list[Book]:
         """Search books by case-insensitive substring match on name.
 
         Uses SQL LOWER() + LIKE for case-insensitive matching.
@@ -84,10 +85,11 @@ class SQLBookRepository(BookRepository):
         statement = select(BookModel).where(
             func.lower(BookModel.name).like(needle)
         )
-        models = self._session.exec(statement).all()
+        result = await self._session.execute(statement)
+        models = result.scalars().all()
         return [BookMapper.to_domain(m) for m in models]
 
-    def create(self, book: Book) -> Book:
+    async def create(self, book: Book) -> Book:
         """Create a new book.
 
         If the entity has an empty id, a UUID4 hex id is generated.
@@ -110,11 +112,11 @@ class SQLBookRepository(BookRepository):
             )
         )
         self._session.add(model)
-        self._session.commit()
-        self._session.refresh(model)
+        await self._session.commit()
+        await self._session.refresh(model)
         return BookMapper.to_domain(model)
 
-    def update(self, book_id: str, book: Book) -> Book | None:
+    async def update(self, book_id: str, book: Book) -> Book | None:
         """Update an existing book.
 
         Args:
@@ -124,7 +126,7 @@ class SQLBookRepository(BookRepository):
         Returns:
             Updated book if found, None otherwise.
         """
-        model = self._session.get(BookModel, book_id)
+        model = await self._session.get(BookModel, book_id)
         if model is None:
             return None
         model.name = book.name
@@ -133,11 +135,11 @@ class SQLBookRepository(BookRepository):
         model.url = book.url
         model.content = book.content
         self._session.add(model)
-        self._session.commit()
-        self._session.refresh(model)
+        await self._session.commit()
+        await self._session.refresh(model)
         return BookMapper.to_domain(model)
 
-    def delete(self, book_id: str) -> bool:
+    async def delete(self, book_id: str) -> bool:
         """Delete a book by id.
 
         Args:
@@ -146,9 +148,9 @@ class SQLBookRepository(BookRepository):
         Returns:
             True if deleted, False if not found.
         """
-        model = self._session.get(BookModel, book_id)
+        model = await self._session.get(BookModel, book_id)
         if model is None:
             return False
-        self._session.delete(model)
-        self._session.commit()
+        await self._session.delete(model)
+        await self._session.commit()
         return True

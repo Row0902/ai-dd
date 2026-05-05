@@ -9,27 +9,27 @@ from infrastructure.repository_registry import register, resolve
 class FakeRepo(BookRepository):
     """Minimal concrete repo for testing registry."""
 
-    def list(self, limit=20, offset=0):
+    async def list(self, limit=20, offset=0):
         """Return empty list."""
         return []
 
-    def get(self, book_id):
+    async def get(self, book_id):
         """Return None for any id."""
         return None
 
-    def get_by_name(self, name):
+    async def get_by_name(self, name):
         """Return empty list for any name."""
         return []
 
-    def create(self, book):
+    async def create(self, book):
         """Return book as-is."""
         return book
 
-    def update(self, book_id, book):
+    async def update(self, book_id, book):
         """Return None for any id."""
         return None
 
-    def delete(self, book_id):
+    async def delete(self, book_id):
         """Return False for any id."""
         return False
 
@@ -62,22 +62,22 @@ class TestRegistryRegister:
         """register() with an existing scheme overwrites the previous class."""
 
         class AnotherRepo(BookRepository):
-            def list(self, limit=20, offset=0):
+            async def list(self, limit=20, offset=0):
                 return []
 
-            def get(self, book_id):
+            async def get(self, book_id):
                 return None
 
-            def get_by_name(self, name):
+            async def get_by_name(self, name):
                 return []
 
-            def create(self, book):
+            async def create(self, book):
                 return book
 
-            def update(self, book_id, book):
+            async def update(self, book_id, book):
                 return None
 
-            def delete(self, book_id):
+            async def delete(self, book_id):
                 return False
 
         register("overwrite-test", FakeRepo)

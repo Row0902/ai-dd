@@ -9,7 +9,7 @@ from domain.entities import Book
 from domain.repositories import BookRepository
 
 
-def list_books(
+async def list_books(
     repo: BookRepository, limit: int = 20, offset: int = 0
 ) -> list[Book]:
     """Return books with pagination.
@@ -22,4 +22,4 @@ def list_books(
     Returns:
         Paginated list of books.
     """
-    return repo.list(limit=limit, offset=offset)
+    return await repo.list(limit=limit, offset=offset)

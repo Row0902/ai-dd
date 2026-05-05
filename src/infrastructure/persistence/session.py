@@ -1,61 +1,89 @@
-"""SQLAlchemy engine and session factory for database access.
+"""Async SQLAlchemy engine and session factory for database access.
 
-Provides helpers for creating an engine from a ``DATABASE_URL`` string
-and obtaining a ``Session`` for use in repository implementations or
+Provides helpers for creating an async engine from a ``DATABASE_URL`` string
+and obtaining an ``AsyncSession`` for use in repository implementations or
 as a FastAPI dependency.
 """
 
 from __future__ import annotations
 
-from collections.abc import Generator
-from contextlib import contextmanager
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 
-from sqlalchemy import Engine, create_engine
-from sqlmodel import Session, SQLModel
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
+from sqlmodel import SQLModel
 
 
-def create_engine_from_url(database_url: str) -> Engine:
-    """Create a SQLAlchemy engine from a database URL.
+def _normalize_async_url(database_url: str) -> str:
+    """Convert a sync database URL to its async equivalent.
 
-    Supports ``sqlite://`` (memory), ``sqlite:///path`` (file), and
-    ``postgresql://`` connection strings.
+    Handles:
+    - ``sqlite://`` → ``sqlite+aiosqlite://``
+    - ``sqlite:///path`` → ``sqlite+aiosqlite:///path``
+    - ``postgresql://`` → ``postgresql+asyncpg://``
+
+    URLs already using an async driver are returned unchanged.
 
     Args:
         database_url: The database connection URL.
 
     Returns:
-        A configured SQLAlchemy Engine instance.
+        URL string with async driver prefix.
     """
+    if database_url.startswith("sqlite://"):
+        return database_url.replace("sqlite://", "sqlite+aiosqlite://", 1)
+    if database_url.startswith("sqlite:///"):
+        return database_url.replace("sqlite:///", "sqlite+aiosqlite:///", 1)
+    if database_url.startswith("postgresql://"):
+        return database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return database_url
+
+
+def create_engine_from_url(database_url: str) -> AsyncEngine:
+    """Create an async SQLAlchemy engine from a database URL.
+
+    Supports ``sqlite://`` (memory), ``sqlite:///path`` (file), and
+    ``postgresql://`` connection strings. Sync URLs are automatically
+    converted to their async equivalents.
+
+    Args:
+        database_url: The database connection URL.
+
+    Returns:
+        A configured async SQLAlchemy Engine instance.
+    """
+    async_url = _normalize_async_url(database_url)
     connect_args: dict[str, object] = {}
-    if database_url.startswith("sqlite"):
+    if async_url.startswith("sqlite"):
         connect_args["check_same_thread"] = False
-    return create_engine(database_url, connect_args=connect_args)
+    return create_async_engine(async_url, connect_args=connect_args)
 
 
-def create_tables(engine: Engine) -> None:
+async def create_tables(engine: AsyncEngine) -> None:
     """Create all SQLModel-defined tables in the database.
 
     Idempotent: existing tables are left unchanged.
 
     Args:
-        engine: The SQLAlchemy engine pointing to the target database.
+        engine: The async SQLAlchemy engine pointing to the target database.
     """
-    SQLModel.metadata.create_all(engine)
+    async with engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)
 
 
-@contextmanager
-def get_session(engine: Engine) -> Generator[Session, None, None]:
-    """Yield a SQLModel Session bound to the given engine.
+@asynccontextmanager
+async def get_session(engine: AsyncEngine) -> AsyncGenerator[AsyncSession, None]:
+    """Yield an AsyncSession bound to the given engine.
 
-    This is a context manager that commits on success and rolls back
-    on exception. Suitable for use as a FastAPI dependency via
-    ``functools.partial`` or as a standalone helper.
+    This is an async context manager that commits on success and rolls back
+    on exception. Suitable for use as a FastAPI dependency or as a standalone
+    helper.
 
     Args:
-        engine: The SQLAlchemy engine to bind the session to.
+        engine: The async SQLAlchemy engine to bind the session to.
 
     Yields:
-        A SQLModel Session instance.
+        An AsyncSession instance.
     """
-    with Session(engine) as session:
+    async with AsyncSession(engine) as session:
         yield session
