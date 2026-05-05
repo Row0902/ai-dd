@@ -12,6 +12,7 @@ dependencies = [
     "pyjwt>=2.8.0",
     "python-dotenv>=1.2.2",
     "sqlmodel>=0.0.22",
+    "redis[hiredis]>=5.0",
     "structlog>=24.0.0",
 ]
 
