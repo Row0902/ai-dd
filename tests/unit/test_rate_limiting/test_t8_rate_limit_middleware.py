@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -87,10 +87,9 @@ class TestRequireRateLimitFactory:
         response = MagicMock()
         response.headers = {}
 
-        with patch("api.middleware.rate_limit.get_rate_limiter", return_value=mock_limiter):
-            dependency = require_rate_limit(5, 60)
-            # Should not raise
-            await dependency(request=request, response=response)
+        dep = require_rate_limit(5, 60)
+        # Should not raise
+        await dep(request=request, response=response, limiter=mock_limiter)
 
         # Headers should be set
         assert "RateLimit-Limit" in response.headers
@@ -114,10 +113,9 @@ class TestRequireRateLimitFactory:
         response = MagicMock()
         response.headers = {}
 
-        with patch("api.middleware.rate_limit.get_rate_limiter", return_value=mock_limiter):
-            dependency = require_rate_limit(5, 60)
-            with pytest.raises(RateLimitExceededError) as exc_info:
-                await dependency(request=request, response=response)
+        dep = require_rate_limit(5, 60)
+        with pytest.raises(RateLimitExceededError) as exc_info:
+            await dep(request=request, response=response, limiter=mock_limiter)
 
         assert exc_info.value.retry_after > 0
 
@@ -138,9 +136,8 @@ class TestRequireRateLimitFactory:
         response = MagicMock()
         response.headers = {}
 
-        with patch("api.middleware.rate_limit.get_rate_limiter", return_value=mock_limiter):
-            dependency = require_rate_limit(5, 60)
-            await dependency(request=request, response=response)
+        dep = require_rate_limit(5, 60)
+        await dep(request=request, response=response, limiter=mock_limiter)
 
         mock_limiter.check.assert_called_once_with(
             key="rate_limit:192.168.1.1:/auth/login",
@@ -165,10 +162,9 @@ class TestRequireRateLimitFactory:
         response = MagicMock()
         response.headers = {}
 
-        with patch("api.middleware.rate_limit.get_rate_limiter", return_value=mock_limiter):
-            dependency = require_rate_limit(5, 60)
-            with pytest.raises(RateLimitExceededError):
-                await dependency(request=request, response=response)
+        dep = require_rate_limit(5, 60)
+        with pytest.raises(RateLimitExceededError):
+            await dep(request=request, response=response, limiter=mock_limiter)
 
         assert response.headers["RateLimit-Remaining"] == "0"
         assert response.headers["RateLimit-Limit"] == "5"
