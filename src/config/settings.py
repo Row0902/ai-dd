@@ -39,6 +39,31 @@ class AppSettings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     ENV: str = "development"
 
+    # --- Rate Limiting ---
+    RATE_LIMIT_ENABLED: bool = True
+    """Master switch for rate limiting. When False, all requests pass through (NoOp)."""
+
+    RATE_LIMIT_FAIL_OPEN: bool = True
+    """Allow requests when Redis is unreachable (fail-open for availability)."""
+
+    RATE_LIMIT_LOGIN_MAX: int = 5
+    """Maximum login requests per IP within the login window."""
+
+    RATE_LIMIT_LOGIN_WINDOW: int = 60
+    """Login rate limit window in seconds."""
+
+    RATE_LIMIT_REGISTER_MAX: int = 3
+    """Maximum register requests per IP within the register window."""
+
+    RATE_LIMIT_REGISTER_WINDOW: int = 60
+    """Register rate limit window in seconds."""
+
+    RATE_LIMIT_GLOBAL_MAX: int = 100
+    """Default maximum requests per IP for unspecified endpoints."""
+
+    RATE_LIMIT_GLOBAL_WINDOW: int = 60
+    """Default rate limit window in seconds for unspecified endpoints."""
+
     @field_validator("SECRET_KEY")
     @classmethod
     def secret_key_min_length(cls, v: str) -> str:
