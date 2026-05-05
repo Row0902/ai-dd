@@ -10,3 +10,25 @@
 include:
   - services/postgres.yml
   - services/redis.yml
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: ai-dd-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://ai_dd_user:ai_dd_pass@postgres:5432/ai_dd
+      SECRET_KEY: ${SECRET_KEY:-change-me-to-a-secret-key-at-least-32-characters-long}
+      REDIS_URL: redis://redis:6379/0
+      ENV: ${ENV:-development}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - books-network
