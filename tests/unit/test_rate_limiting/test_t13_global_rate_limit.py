@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock
 
-import pytest
 from fastapi.testclient import TestClient
 
 from api.dependencies import _reset_repos, get_rate_limiter
@@ -12,7 +11,6 @@ from config.settings import AppSettings
 from domain.rate_limiting.ports import RateLimiter
 from infrastructure.rate_limiting.noop_rate_limiter import NoOpRateLimiter
 from main import create_app
-
 
 TEST_SECRET = "test-secret-key-at-least-32-chars-long"
 

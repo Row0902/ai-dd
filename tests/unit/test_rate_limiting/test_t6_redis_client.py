@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from config.settings import AppSettings
 from infrastructure.rate_limiting.redis_client import create_redis_client
 

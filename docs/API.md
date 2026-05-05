@@ -737,7 +737,59 @@ curl -s -X DELETE http://localhost:8000/books/$BOOK_ID \
 
 ## Rate Limiting
 
-No hay rate limiting implementado en esta versión.
+La API aplica rate limiting per-IP usando Redis Sorted Sets (sliding window). Cada endpoint tiene su propio límite independiente.
+
+### Límites por endpoint
+
+| Endpoint | Límite | Ventana |
+|----------|--------|---------|
+| `POST /auth/login` | 5 requests | 60 segundos |
+| `POST /auth/register` | 3 requests | 60 segundos |
+| Todos los demás endpoints protegidos | 100 requests | 60 segundos |
+| `GET /health` | Sin límite | — |
+
+### Headers de respuesta
+
+Todas las respuestas incluyen headers del estándar IETF draft:
+
+| Header | Descripción |
+|--------|-------------|
+| `RateLimit-Limit` | Máximo de requests permitidos en la ventana |
+| `RateLimit-Remaining` | Requests restantes en la ventana actual |
+| `RateLimit-Reset` | Timestamp Unix de cuándo se reinicia la ventana |
+
+### Respuesta 429
+
+Cuando se excede el límite:
+
+```json
+{"detail": "Too many requests"}
+```
+
+Headers adicionales en 429:
+
+| Header | Descripción |
+|--------|-------------|
+| `Retry-After` | Segundos hasta que el cliente puede reintentar |
+
+### Configuración
+
+Los límites se configuran vía variables de entorno:
+
+| Variable | Default | Descripción |
+|----------|---------|-------------|
+| `RATE_LIMIT_ENABLED` | `true` | Habilitar/deshabilitar rate limiting |
+| `RATE_LIMIT_FAIL_OPEN` | `true` | Permitir tráfico si Redis no está disponible |
+| `RATE_LIMIT_LOGIN_MAX` | `5` | Máximo requests para login |
+| `RATE_LIMIT_LOGIN_WINDOW` | `60` | Ventana para login (segundos) |
+| `RATE_LIMIT_REGISTER_MAX` | `3` | Máximo requests para register |
+| `RATE_LIMIT_REGISTER_WINDOW` | `60` | Ventana para register (segundos) |
+| `RATE_LIMIT_GLOBAL_MAX` | `100` | Máximo requests para endpoints globales |
+| `RATE_LIMIT_GLOBAL_WINDOW` | `60` | Ventana para endpoints globales (segundos) |
+
+### Comportamiento fail-open
+
+Si Redis no está disponible, las requests pasan normalmente (fail-open). Rate limiting es calidad de servicio, no seguridad — la disponibilidad tiene prioridad.
 
 ---
 

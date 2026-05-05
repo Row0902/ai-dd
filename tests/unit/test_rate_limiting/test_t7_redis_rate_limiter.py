@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import time
-
 import fakeredis
 import fakeredis.aioredis
 import pytest
@@ -138,4 +136,61 @@ class TestFailOpen:
 
         limiter = RedisRateLimiter(broken_redis)
         result = await limiter.check(key="test:fail", max_requests=1, window_seconds=60)
+        assert result is True
+
+    @pytest.mark.asyncio
+    async def test_fail_open_on_timeout_error(self) -> None:
+        """T17: When Redis raises TimeoutError, check() must return True."""
+        from unittest.mock import AsyncMock, MagicMock
+
+        broken_redis = MagicMock()
+        broken_redis.pipeline = MagicMock()
+        mock_pipe = MagicMock()
+        mock_pipe.zremrangebyscore = MagicMock(return_value=mock_pipe)
+        mock_pipe.zcard = MagicMock(return_value=mock_pipe)
+        mock_pipe.zadd = MagicMock(return_value=mock_pipe)
+        mock_pipe.expire = MagicMock(return_value=mock_pipe)
+        mock_pipe.execute = AsyncMock(side_effect=TimeoutError("Redis timeout"))
+        broken_redis.pipeline.return_value = mock_pipe
+
+        limiter = RedisRateLimiter(broken_redis)
+        result = await limiter.check(key="test:timeout", max_requests=1, window_seconds=60)
+        assert result is True
+
+    @pytest.mark.asyncio
+    async def test_fail_open_on_redis_error(self) -> None:
+        """T17: When Redis raises RedisError, check() must return True."""
+        from unittest.mock import AsyncMock, MagicMock
+
+        broken_redis = MagicMock()
+        broken_redis.pipeline = MagicMock()
+        mock_pipe = MagicMock()
+        mock_pipe.zremrangebyscore = MagicMock(return_value=mock_pipe)
+        mock_pipe.zcard = MagicMock(return_value=mock_pipe)
+        mock_pipe.zadd = MagicMock(return_value=mock_pipe)
+        mock_pipe.expire = MagicMock(return_value=mock_pipe)
+        mock_pipe.execute = AsyncMock(side_effect=Exception("WRONGTYPE Operation against a key"))
+        broken_redis.pipeline.return_value = mock_pipe
+
+        limiter = RedisRateLimiter(broken_redis)
+        result = await limiter.check(key="test:redis_error", max_requests=1, window_seconds=60)
+        assert result is True
+
+    @pytest.mark.asyncio
+    async def test_fail_open_on_response_error(self) -> None:
+        """T17: When Redis raises ResponseError, check() must return True."""
+        from unittest.mock import AsyncMock, MagicMock
+
+        broken_redis = MagicMock()
+        broken_redis.pipeline = MagicMock()
+        mock_pipe = MagicMock()
+        mock_pipe.zremrangebyscore = MagicMock(return_value=mock_pipe)
+        mock_pipe.zcard = MagicMock(return_value=mock_pipe)
+        mock_pipe.zadd = MagicMock(return_value=mock_pipe)
+        mock_pipe.expire = MagicMock(return_value=mock_pipe)
+        mock_pipe.execute = AsyncMock(side_effect=Exception("BUSY Redis is busy"))
+        broken_redis.pipeline.return_value = mock_pipe
+
+        limiter = RedisRateLimiter(broken_redis)
+        result = await limiter.check(key="test:response_error", max_requests=1, window_seconds=60)
         assert result is True

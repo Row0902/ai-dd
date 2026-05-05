@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import pytest
 from fastapi.testclient import TestClient
 
 from config.settings import AppSettings
 from domain.rate_limiting.exceptions import RateLimitExceededError
 from main import create_app
-
 
 TEST_SECRET = "test-secret-key-at-least-32-chars-long"
 
@@ -32,16 +30,14 @@ class TestRateLimitExceptionHandler:
 
         # Verify the handler is registered by checking exception handlers
         # The handler should be in the app's exception handlers
-        from starlette.exceptions import HTTPException as StarletteHTTPException
 
         # Check that RateLimitExceededError is handled
         handler = app.exception_handlers.get(RateLimitExceededError)
         assert handler is not None, "RateLimitExceededError handler not registered"
 
     def test_handler_returns_correct_body(self) -> None:
-        """Handler returns {\"detail\": \"Too many requests\"}."""
+        r"""Handler returns {\"detail\": \"Too many requests\"}."""
         from starlette.requests import Request
-        from starlette.responses import JSONResponse
 
         client = self._make_app()
         app = client.app
@@ -90,3 +86,41 @@ class TestRateLimitExceptionHandler:
 
         response = asyncio.run(handler(request, exc))
         assert response.headers["Retry-After"] == "45"
+
+    def test_handler_sets_all_four_ietf_headers(self) -> None:
+        """T15: 429 response includes all 4 IETF RateLimit headers.
+
+        Verifies REQ-RL-003: Retry-After, RateLimit-Limit,
+        RateLimit-Remaining, and RateLimit-Reset are all present.
+        """
+        from starlette.requests import Request
+
+        client = self._make_app()
+        app = client.app
+        handler = app.exception_handlers[RateLimitExceededError]
+
+        scope = {
+            "type": "http",
+            "method": "GET",
+            "path": "/test",
+            "query_string": b"",
+            "headers": [],
+        }
+        request = Request(scope)
+
+        exc = RateLimitExceededError(retry_after=30, limit=5)
+        import asyncio
+
+        response = asyncio.run(handler(request, exc))
+
+        # All 4 IETF headers must be present
+        assert "Retry-After" in response.headers
+        assert "RateLimit-Limit" in response.headers
+        assert "RateLimit-Remaining" in response.headers
+        assert "RateLimit-Reset" in response.headers
+
+        # Verify values
+        assert response.headers["Retry-After"] == "30"
+        assert response.headers["RateLimit-Limit"] == "5"
+        assert response.headers["RateLimit-Remaining"] == "0"
+        assert int(response.headers["RateLimit-Reset"]) > 0

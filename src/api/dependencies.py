@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from config.settings import AppSettings
@@ -34,6 +35,9 @@ from infrastructure.persistence.in_memory_favorite_repository import (
 from infrastructure.rate_limiting.noop_rate_limiter import NoOpRateLimiter
 from infrastructure.rate_limiting.redis_client import create_redis_client
 from infrastructure.rate_limiting.redis_rate_limiter import RedisRateLimiter
+
+if TYPE_CHECKING:
+    import redis.asyncio
 
 _settings: AppSettings | None = None
 
