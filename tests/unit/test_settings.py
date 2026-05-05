@@ -11,7 +11,7 @@ class TestAppSettingsDefaults:
 
     def test_database_url_default(self, monkeypatch: pytest.MonkeyPatch):
         """DATABASE_URL defaults to memory:// when not set."""
-        monkeypatch.delenv("DATABASE_URL", raising=False)
+        monkeypatch.setenv("DATABASE_URL", "memory://")
         monkeypatch.setenv("SECRET_KEY", "a" * 32)
         settings = AppSettings()
         assert settings.DATABASE_URL == "memory://"
@@ -38,6 +38,7 @@ class TestAppSettingsDefaults:
 
     def test_env_default(self, monkeypatch: pytest.MonkeyPatch):
         """ENV defaults to development."""
+        monkeypatch.setenv("ENV", "development")
         monkeypatch.setenv("SECRET_KEY", "a" * 32)
         settings = AppSettings()
         assert settings.ENV == "development"

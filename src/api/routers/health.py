@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 from api.dependencies import get_book_repo
 from domain.repositories import BookRepository
 
-router = APIRouter()
+router = APIRouter(tags=["Health"])
 
 
 @router.get("/health")

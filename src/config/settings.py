@@ -17,6 +17,7 @@ class AppSettings(BaseSettings):
     Attributes:
         DATABASE_URL: Connection string for the persistence backend.
             Schemes: ``memory://`` (tests), ``sqlite://``, ``postgresql://``.
+        REDIS_URL: Connection string for Redis cache/sessions.
         SECRET_KEY: Signing key for JWT tokens. Must be >= 32 characters.
         ACCESS_TOKEN_EXPIRE_MINUTES: JWT token lifetime in minutes.
         CORS_ORIGINS: Allowed CORS origins as a JSON list of strings.
@@ -31,6 +32,7 @@ class AppSettings(BaseSettings):
     )
 
     DATABASE_URL: str = "memory://"
+    REDIS_URL: str = "redis://localhost:6379/0"
     SECRET_KEY: str = "dev-secret-key-change-in-production-32chars"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     CORS_ORIGINS: list[str] = ["http://localhost:3000"]

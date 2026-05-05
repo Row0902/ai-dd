@@ -18,7 +18,7 @@ from application.use_cases.favorites.remove_favorite import remove_favorite
 from domain.auth.permissions import Operation
 from domain.favorites.repositories import FavoriteRepository
 
-router = APIRouter(prefix="/favorites")
+router = APIRouter(prefix="/favorites", tags=["favorites"])
 
 
 @router.post("/{book_id}", status_code=201)
