@@ -16,6 +16,8 @@ venv/
 .env
 .env.local
 .env.*.local
+.envrc
+.direnv/
 
 # IDE and editor
 .idea/

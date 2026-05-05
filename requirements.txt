@@ -1,4 +1,5 @@
 fastapi[standard]
 pytest>=9.0.3
+python-dotenv
 ruff
 ty

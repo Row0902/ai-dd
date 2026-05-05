@@ -1,115 +1,59 @@
-import json
-import uuid
+"""FastAPI entrypoint (composition root).
+
+This module preserves the current HTTP contract while delegating business logic
+to application use cases and persistence to infrastructure adapters.
+"""
+
+from __future__ import annotations
+
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+
+from api.dependencies import get_book_repo
+from api.routers.books import router as books_router
+from domain.exceptions import AggregatedValidationError, DomainError, ValidationError
+from infrastructure.json_book_repository import JsonBookRepository
 
 DATA_FILE = Path(__file__).parent / "library.json"
 
 
-def load_data():
-    if not DATA_FILE.exists():
-        return []
-    try:
-        with open(DATA_FILE, encoding="utf-8") as f:
-            data = json.load(f)
-            if not isinstance(data, list):
-                return []
-            return data
-    except Exception:
-        return []
+def create_app(data_file: Path = DATA_FILE) -> FastAPI:
+    """Create a FastAPI app wired to a JSON repository adapter."""
+    repo = JsonBookRepository(data_file)
+
+    app = FastAPI()
+    app.include_router(books_router)
+    app.dependency_overrides[get_book_repo] = lambda: repo
+
+    @app.exception_handler(DomainError)
+    async def domain_error_handler(request: Request, exc: DomainError) -> JSONResponse:
+        """Convert domain errors to HTTP 422 with structured detail.
+
+        Registered at the FastAPI **application** level (not router level)
+        because FastAPI exception handlers only take effect when added to the
+        app instance — router-level ``@router.exception_handler`` does not
+        exist in the current API.  Functionally equivalent to the design
+        intent.
+        """
+        if isinstance(exc, AggregatedValidationError):
+            detail = [{"field": e.field, "message": e.message} for e in exc.errors]
+        elif isinstance(exc, ValidationError):
+            detail = [{"field": exc.field, "message": exc.message}]
+        else:
+            detail = [{"field": "unknown", "message": str(exc)}]
+        return JSONResponse(status_code=422, content={"detail": detail})
+
+    @app.get("/")
+    def root():
+        """Root endpoint."""
+        return {"msg": "AI Driven Development - biblioteca digital"}
+
+    return app
 
 
-def save_data(data):
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-
-
-app = FastAPI()
-
-
-class Book(BaseModel):
-    name: str
-    author: str = ""
-    description: str = ""
-    url: str = ""
-    content: str = ""
-
-
-@app.get("/")
-def root():
-    return {"msg": "AI Driven Development - biblioteca digital"}
-
-
-@app.get("/books")
-def list_books():
-    return load_data()
-
-
-@app.get("/books/{book_id}")
-def get_book(book_id: str):
-    data = load_data()
-    for b in data:
-        if b.get("id") == book_id:
-            return b
-    raise HTTPException(status_code=404, detail="Not found")
-
-
-@app.get("/books/by-name/{name}")
-def get_books_by_name(name: str):
-    data = load_data()
-    res = []
-    for b in data:
-        if name.lower() in (b.get("name") or "").lower():
-            res.append(b)
-    return res
-
-
-@app.post("/books")
-def create_book(book: Book):
-    data = load_data()
-    new = {
-        "id": uuid.uuid4().hex,
-        "name": book.name,
-        "author": book.author,
-        "description": book.description,
-        "url": book.url,
-        "content": book.content,
-    }
-    data.append(new)
-    save_data(data)
-    return new
-
-
-@app.put("/books/{book_id}")
-def update_book(book_id: str, book: Book):
-    data = load_data()
-    for idx, b in enumerate(data):
-        if b.get("id") == book_id:
-            data[idx].update(
-                {
-                    "name": book.name,
-                    "author": book.author,
-                    "description": book.description,
-                    "url": book.url,
-                    "content": book.content,
-                }
-            )
-            save_data(data)
-            return data[idx]
-    raise HTTPException(status_code=404, detail="Not found")
-
-
-@app.delete("/books/{book_id}")
-def delete_book(book_id: str):
-    data = load_data()
-    for idx, b in enumerate(data):
-        if b.get("id") == book_id:
-            removed = data.pop(idx)
-            save_data(data)
-            return {"deleted": removed}
-    raise HTTPException(status_code=404, detail="Not found")
+app = create_app()
 
 
 if __name__ == "__main__":
