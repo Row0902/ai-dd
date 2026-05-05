@@ -6,7 +6,7 @@ from domain.exceptions import ValidationError
 from domain.validation_rules import MAX_AUTHOR_LENGTH
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class BookAuthor:
     """Immutable author name value object.
 

@@ -17,7 +17,7 @@ class UserRole(StrEnum):
     USER = "user"
 
 
-@dataclass
+@dataclass(slots=True)
 class User:
     """User entity in the auth domain.
 
@@ -35,12 +35,10 @@ class User:
     hashed_password: str
     role: UserRole = UserRole.USER
     is_active: bool = True
-    created_at: datetime = field(
-        default_factory=lambda: datetime.now(UTC)
-    )
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
-@dataclass
+@dataclass(slots=True)
 class Invitation:
     """Invitation entity for onboarding new users.
 
@@ -60,8 +58,6 @@ class Invitation:
     email: str
     role: UserRole
     inviter_id: str
-    created_at: datetime = field(
-        default_factory=lambda: datetime.now(UTC)
-    )
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     expires_at: datetime | None = None
     used_at: datetime | None = None

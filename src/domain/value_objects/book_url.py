@@ -7,7 +7,7 @@ from domain.exceptions import ValidationError
 from domain.validation_rules import MAX_URL_LENGTH
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class BookUrl:
     """Immutable URL value object.
 

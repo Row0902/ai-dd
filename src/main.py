@@ -145,9 +145,7 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
             return repo
 
     app = FastAPI(lifespan=lifespan)
-    app.state.db_engine = (
-        _sql_engine if scheme in ("sqlite", "postgresql") else None
-    )
+    app.state.db_engine = _sql_engine if scheme in ("sqlite", "postgresql") else None
 
     # CORS middleware
     app.add_middleware(

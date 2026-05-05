@@ -72,7 +72,7 @@ async def create_tables(engine: AsyncEngine) -> None:
 
 
 @asynccontextmanager
-async def get_session(engine: AsyncEngine) -> AsyncGenerator[AsyncSession, None]:
+async def get_session(engine: AsyncEngine) -> AsyncGenerator[AsyncSession]:
     """Yield an AsyncSession bound to the given engine.
 
     This is an async context manager that commits on success and rolls back

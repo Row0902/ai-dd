@@ -1,6 +1,5 @@
 """Unit tests for BcryptPasswordHasher."""
 
-
 from infrastructure.auth.bcrypt_password_hasher import BcryptPasswordHasher
 
 

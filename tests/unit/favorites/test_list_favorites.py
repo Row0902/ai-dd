@@ -20,9 +20,7 @@ class InMemoryFavoriteRepository(FavoriteRepository):
         """Add a favorite with current timestamp."""
         self._favorites[(user_id, book_id)] = datetime.now(UTC)
 
-    async def add_with_ts(
-        self, user_id: str, book_id: str, ts: datetime
-    ) -> None:
+    async def add_with_ts(self, user_id: str, book_id: str, ts: datetime) -> None:
         """Add with explicit timestamp for testing ordering."""
         self._favorites[(user_id, book_id)] = ts
 

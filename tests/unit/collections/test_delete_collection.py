@@ -61,9 +61,7 @@ class TestDeleteCollection:
         repo = InMemoryCollectionRepository()
         col = await create_collection(repo, name="Theirs", owner_id="user-2")
         with pytest.raises(AuthorizationError):
-            await delete_collection(
-                repo, col.id, user_id="user-1", role=UserRole.USER
-            )
+            await delete_collection(repo, col.id, user_id="user-1", role=UserRole.USER)
         # Collection must still exist
         assert await repo.find_by_id(col.id) is not None
 

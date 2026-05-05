@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 
-@dataclass
+@dataclass(slots=True)
 class Collection:
     """Collection entity grouping books under a named set.
 

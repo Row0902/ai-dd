@@ -124,9 +124,7 @@ class TestCollectionsApi:
             headers=_user_headers("user-1"),
         ).json()
 
-        resp = client.delete(
-            f"/collections/{created['id']}", headers=_admin_headers()
-        )
+        resp = client.delete(f"/collections/{created['id']}", headers=_admin_headers())
         assert resp.status_code == 204
 
     def test_delete_nonexistent_returns_404(self) -> None:

@@ -72,12 +72,9 @@ class SQLFavoriteRepository(FavoriteRepository):
         Returns:
             Ordered list of book IDs (most recently added first).
         """
-        statement = (
-            text(
-                "SELECT book_id FROM favorites "
-                "WHERE user_id = :user_id ORDER BY added_at DESC"
-            )
-            .bindparams(user_id=user_id)
-        )
+        statement = text(
+            "SELECT book_id FROM favorites "
+            "WHERE user_id = :user_id ORDER BY added_at DESC"
+        ).bindparams(user_id=user_id)
         result = await self._session.execute(statement)
         return [row[0] for row in result.fetchall()]

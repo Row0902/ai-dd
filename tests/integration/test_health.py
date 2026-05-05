@@ -35,6 +35,7 @@ class TestHealthEndpoint:
 
         class BrokenRepo:
             """Repository stub that always fails."""
+
             async def list(self, *args, **kwargs):
                 raise RuntimeError("connection lost")
 

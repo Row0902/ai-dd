@@ -64,9 +64,7 @@ async def register_endpoint(
     payload: RegisterPayload,
     user_repo: Annotated[UserRepository, Depends(get_user_repo)],
     hasher: Annotated[PasswordHasher, Depends(get_password_hasher)],
-    invitation_repo: Annotated[
-        InvitationRepository, Depends(get_invitation_repo)
-    ],
+    invitation_repo: Annotated[InvitationRepository, Depends(get_invitation_repo)],
 ):
     """Register a new user.
 
@@ -92,9 +90,7 @@ async def register_endpoint(
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     try:
-        user = await register_user(
-            user_repo, hasher, payload.email, payload.password
-        )
+        user = await register_user(user_repo, hasher, payload.email, payload.password)
     except UserAlreadyExists as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
@@ -138,12 +134,8 @@ async def login_endpoint(
 @router.post("/invitations", status_code=201)
 async def create_invitation_endpoint(
     payload: CreateInvitationPayload,
-    invitation_repo: Annotated[
-        InvitationRepository, Depends(get_invitation_repo)
-    ],
-    notification: Annotated[
-        NotificationService, Depends(get_notification_service)
-    ],
+    invitation_repo: Annotated[InvitationRepository, Depends(get_invitation_repo)],
+    notification: Annotated[NotificationService, Depends(get_notification_service)],
     user_repo: Annotated[UserRepository, Depends(get_user_repo)],
     admin: dict = Depends(require_permission(Operation.BOOK_CREATE)),
 ):

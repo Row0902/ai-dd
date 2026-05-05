@@ -65,7 +65,5 @@ class NotificationService(ABC):
     """Port for sending notifications (e.g., invitation emails)."""
 
     @abstractmethod
-    async def send_invitation(
-        self, email: str, token: str, inviter_name: str
-    ) -> None:
+    async def send_invitation(self, email: str, token: str, inviter_name: str) -> None:
         """Send an invitation notification to the given email."""

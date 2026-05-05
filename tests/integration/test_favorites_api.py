@@ -48,9 +48,7 @@ class TestFavoritesApi:
         """POST /favorites/{book_id} adds a favorite and returns 201."""
         client = _client()
         book_id = _create_book(client)
-        resp = client.post(
-            f"/favorites/{book_id}", headers=_user_headers()
-        )
+        resp = client.post(f"/favorites/{book_id}", headers=_user_headers())
         assert resp.status_code == 201
 
     def test_add_favorite_is_idempotent(self) -> None:

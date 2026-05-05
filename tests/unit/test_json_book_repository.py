@@ -131,9 +131,7 @@ class TestListPagination:
     async def _create_books(self, repo: JsonBookRepository, count: int) -> None:
         """Helper to create N books."""
         for i in range(count):
-            await repo.create(
-                Book(id="", name=f"Book {i:02d}", author=f"Author {i}")
-            )
+            await repo.create(Book(id="", name=f"Book {i:02d}", author=f"Author {i}"))
 
     async def test_list_default_limit_returns_all_when_fewer(
         self, tmp_path: Path

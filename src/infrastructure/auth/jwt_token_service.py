@@ -69,9 +69,7 @@ class JwtTokenService(TokenService):
             AuthenticationError: If token is expired, invalid, or tampered.
         """
         try:
-            return jwt.decode(
-                token, self.secret_key, algorithms=[self.algorithm]
-            )
+            return jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
         except jwt.ExpiredSignatureError as exc:
             raise AuthenticationError("token has expired") from exc
         except jwt.InvalidTokenError as exc:
