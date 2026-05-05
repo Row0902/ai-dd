@@ -149,17 +149,13 @@ def get_favorite_repo() -> FavoriteRepository:
     return _favorite_repo
 
 
-def get_redis_client(settings: AppSettings | None = None):
+def get_redis_client() -> redis.asyncio.Redis:
     """Provide an async Redis client from application settings.
-
-    Args:
-        settings: Application settings. If None, uses get_settings().
 
     Returns:
         A ``redis.asyncio.Redis`` client instance.
     """
-    if settings is None:
-        settings = get_settings()
+    settings = get_settings()
     return create_redis_client(settings)
 
 
@@ -189,7 +185,7 @@ def get_rate_limiter() -> RateLimiter:
         _rate_limiter = NoOpRateLimiter()
         return _rate_limiter
 
-    redis_client = get_redis_client(settings)
+    redis_client = get_redis_client()
     _rate_limiter = RedisRateLimiter(redis_client)
     return _rate_limiter
 

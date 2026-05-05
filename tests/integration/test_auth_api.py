@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
+from api.dependencies import get_rate_limiter
 from config.settings import AppSettings
 from infrastructure.auth.jwt_token_service import JwtTokenService
+from infrastructure.rate_limiting.noop_rate_limiter import NoOpRateLimiter
 from main import create_app
 
 TEST_SECRET = "test-secret-key-at-least-32-chars-long"
@@ -25,7 +27,9 @@ def _client(test_settings: AppSettings | None = None) -> TestClient:
             DATABASE_URL="memory://",
             SECRET_KEY=TEST_SECRET,
         )
-    return TestClient(create_app(test_settings))
+    app = create_app(test_settings)
+    app.dependency_overrides[get_rate_limiter] = lambda: NoOpRateLimiter()
+    return TestClient(app)
 
 
 def _admin_headers(test_settings: AppSettings) -> dict[str, str]:

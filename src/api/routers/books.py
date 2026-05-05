@@ -14,6 +14,7 @@ from fastapi.responses import Response
 from api.dependencies import get_book_repo
 from api.mappers import book_to_dict
 from api.middleware.auth import require_permission
+from api.middleware.rate_limit import global_rate_limit
 from api.schemas import BookPayload
 from application.use_cases.create_book import create_book
 from application.use_cases.delete_book import delete_book
@@ -33,6 +34,7 @@ async def list_books_endpoint(
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
     offset: Annotated[int, Query(ge=0)] = 0,
     user: dict = Depends(require_permission(Operation.BOOK_READ)),
+    _rate_limit: None = Depends(global_rate_limit),
 ):
     """List books with pagination.
 
@@ -50,6 +52,7 @@ async def get_book_endpoint(
     book_id: str,
     repo: Annotated[BookRepository, Depends(get_book_repo)],
     user: dict = Depends(require_permission(Operation.BOOK_READ)),
+    _rate_limit: None = Depends(global_rate_limit),
 ):
     """Get a book by id."""
     book = await get_book(repo, book_id)
@@ -63,6 +66,7 @@ async def get_books_by_name_endpoint(
     name: str,
     repo: Annotated[BookRepository, Depends(get_book_repo)],
     user: dict = Depends(require_permission(Operation.BOOK_READ)),
+    _rate_limit: None = Depends(global_rate_limit),
 ):
     """Search books by name (case-insensitive substring match)."""
     return [book_to_dict(b) for b in await get_books_by_name(repo, name)]
@@ -73,6 +77,7 @@ async def create_book_endpoint(
     book: BookPayload,
     repo: Annotated[BookRepository, Depends(get_book_repo)],
     user: dict = Depends(require_permission(Operation.BOOK_CREATE)),
+    _rate_limit: None = Depends(global_rate_limit),
 ):
     """Create a book."""
     created = await create_book(
@@ -92,6 +97,7 @@ async def replace_book_endpoint(
     book: BookPayload,
     repo: Annotated[BookRepository, Depends(get_book_repo)],
     user: dict = Depends(require_permission(Operation.BOOK_UPDATE)),
+    _rate_limit: None = Depends(global_rate_limit),
 ):
     """Replace a book (PUT semantics)."""
     updated = await replace_book(
@@ -113,6 +119,7 @@ async def delete_book_endpoint(
     book_id: str,
     repo: Annotated[BookRepository, Depends(get_book_repo)],
     user: dict = Depends(require_permission(Operation.BOOK_DELETE)),
+    _rate_limit: None = Depends(global_rate_limit),
 ):
     """Delete a book."""
     existing = await get_book(repo, book_id)

@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from api.dependencies import _reset_repos
+from api.dependencies import _reset_repos, get_rate_limiter
 from config.settings import AppSettings
 from infrastructure.auth.jwt_token_service import JwtTokenService
+from infrastructure.rate_limiting.noop_rate_limiter import NoOpRateLimiter
 from main import create_app
 
 TEST_SECRET = "test-secret-key-at-least-32-chars-long"
@@ -20,7 +21,9 @@ def _settings() -> AppSettings:
 def _client() -> TestClient:
     """Create a TestClient with in-memory repository."""
     _reset_repos()
-    return TestClient(create_app(_settings()))
+    app = create_app(_settings())
+    app.dependency_overrides[get_rate_limiter] = lambda: NoOpRateLimiter()
+    return TestClient(app)
 
 
 def _user_headers(user_id: str = "test-user-id") -> dict[str, str]:
