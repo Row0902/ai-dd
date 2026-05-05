@@ -30,7 +30,8 @@
         "**/.DS_Store": true,
         "**/Thumbs.db": true,
         "**/__pycache__": true,
-        "**/.ruff_cache": true
+        "**/.ruff_cache": true,
+        ".pytest_cache": true
     },
     "[jsonc]": {
         "editor.defaultFormatter": "vscode.json-language-features"

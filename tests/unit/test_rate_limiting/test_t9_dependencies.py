@@ -18,16 +18,24 @@ TEST_SECRET = "test-secret-key-at-least-32-chars-long"
 class TestGetRedisClient:
     """Tests for get_redis_client() provider."""
 
+    def _reset_singleton(self) -> None:
+        """Reset singletons for test isolation."""
+        import api.dependencies as deps
+        deps._settings = None
+        deps._rate_limiter = None
+
     def test_returns_redis_client(self) -> None:
         """Provider returns a Redis client from settings REDIS_URL."""
-        from api.dependencies import get_redis_client
+        from api.dependencies import get_redis_client, get_settings
 
+        self._reset_singleton()
         settings = AppSettings(
             DATABASE_URL="memory://",
             SECRET_KEY=TEST_SECRET,
             REDIS_URL="redis://localhost:6379/0",
         )
-        client = get_redis_client(settings)
+        with patch("api.dependencies.get_settings", return_value=settings):
+            client = get_redis_client()
         assert client is not None
 
     def test_returns_async_redis_instance(self) -> None:
@@ -36,11 +44,13 @@ class TestGetRedisClient:
 
         from api.dependencies import get_redis_client
 
+        self._reset_singleton()
         settings = AppSettings(
             DATABASE_URL="memory://",
             SECRET_KEY=TEST_SECRET,
         )
-        client = get_redis_client(settings)
+        with patch("api.dependencies.get_settings", return_value=settings):
+            client = get_redis_client()
         assert isinstance(client, redis.asyncio.Redis)
 
 

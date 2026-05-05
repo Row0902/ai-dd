@@ -12,6 +12,7 @@ from fastapi.responses import Response
 
 from api.dependencies import get_favorite_repo
 from api.middleware.auth import require_permission
+from api.middleware.rate_limit import global_rate_limit
 from application.use_cases.favorites.add_favorite import add_favorite
 from application.use_cases.favorites.list_favorites import list_favorites
 from application.use_cases.favorites.remove_favorite import remove_favorite
@@ -26,6 +27,7 @@ async def add_favorite_endpoint(
     book_id: str,
     repo: Annotated[FavoriteRepository, Depends(get_favorite_repo)],
     user: dict = Depends(require_permission(Operation.FAVORITE_ADD)),
+    _rate_limit: None = Depends(global_rate_limit),
 ):
     """Add a book to the user's favorites (idempotent).
 
@@ -43,6 +45,7 @@ async def remove_favorite_endpoint(
     book_id: str,
     repo: Annotated[FavoriteRepository, Depends(get_favorite_repo)],
     user: dict = Depends(require_permission(Operation.FAVORITE_REMOVE)),
+    _rate_limit: None = Depends(global_rate_limit),
 ):
     """Remove a book from the user's favorites (idempotent).
 
@@ -59,6 +62,7 @@ async def remove_favorite_endpoint(
 async def list_favorites_endpoint(
     repo: Annotated[FavoriteRepository, Depends(get_favorite_repo)],
     user: dict = Depends(require_permission(Operation.COLLECTION_READ)),
+    _rate_limit: None = Depends(global_rate_limit),
 ):
     """List the user's favorite book IDs in reverse chronological order.
 

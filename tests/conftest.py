@@ -9,9 +9,10 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from api.dependencies import _reset_repos
+from api.dependencies import _reset_repos, get_rate_limiter
 from config.settings import AppSettings
 from infrastructure.auth.jwt_token_service import JwtTokenService
+from infrastructure.rate_limiting.noop_rate_limiter import NoOpRateLimiter
 from main import create_app
 
 TEST_SECRET_KEY = "test-secret-key-at-least-32-chars-long"
@@ -59,7 +60,9 @@ def client(test_settings: AppSettings) -> TestClient:
         Configured TestClient instance.
     """
     _reset_repos()
-    return TestClient(create_app(test_settings))
+    app = create_app(test_settings)
+    app.dependency_overrides[get_rate_limiter] = lambda: NoOpRateLimiter()
+    return TestClient(app)
 
 
 @pytest.fixture

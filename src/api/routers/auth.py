@@ -15,6 +15,7 @@ from api.dependencies import (
     get_user_repo,
 )
 from api.middleware.auth import require_permission
+from api.middleware.rate_limit import login_rate_limit, register_rate_limit
 from application.use_cases.auth.create_invitation import create_invitation
 from application.use_cases.auth.login_user import login_user
 from application.use_cases.auth.register_user import register_user
@@ -65,6 +66,7 @@ async def register_endpoint(
     user_repo: Annotated[UserRepository, Depends(get_user_repo)],
     hasher: Annotated[PasswordHasher, Depends(get_password_hasher)],
     invitation_repo: Annotated[InvitationRepository, Depends(get_invitation_repo)],
+    _rate_limit: None = Depends(register_rate_limit),
 ):
     """Register a new user.
 
@@ -108,6 +110,7 @@ async def login_endpoint(
     user_repo: Annotated[UserRepository, Depends(get_user_repo)],
     hasher: Annotated[PasswordHasher, Depends(get_password_hasher)],
     token_service: Annotated[TokenService, Depends(get_token_service)],
+    _rate_limit: None = Depends(login_rate_limit),
 ):
     """Authenticate a user and return a JWT.
 

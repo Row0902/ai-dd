@@ -13,6 +13,7 @@ from pydantic import BaseModel
 
 from api.dependencies import get_collection_repo
 from api.middleware.auth import require_permission
+from api.middleware.rate_limit import global_rate_limit
 from application.use_cases.collections.create_collection import create_collection
 from application.use_cases.collections.delete_collection import delete_collection
 from application.use_cases.collections.list_collections import list_collections
@@ -48,6 +49,7 @@ async def create_collection_endpoint(
     payload: CollectionPayload,
     repo: Annotated[CollectionRepository, Depends(get_collection_repo)],
     user: dict = Depends(require_permission(Operation.COLLECTION_CREATE)),
+    _rate_limit: None = Depends(global_rate_limit),
 ):
     """Create a new collection owned by the authenticated user.
 
@@ -69,6 +71,7 @@ async def create_collection_endpoint(
 async def list_collections_endpoint(
     repo: Annotated[CollectionRepository, Depends(get_collection_repo)],
     user: dict = Depends(require_permission(Operation.COLLECTION_READ)),
+    _rate_limit: None = Depends(global_rate_limit),
 ):
     """List collections visible to the authenticated user.
 
@@ -90,6 +93,7 @@ async def delete_collection_endpoint(
     collection_id: str,
     repo: Annotated[CollectionRepository, Depends(get_collection_repo)],
     user: dict = Depends(require_permission(Operation.COLLECTION_DELETE)),
+    _rate_limit: None = Depends(global_rate_limit),
 ):
     """Delete a collection. Owner or admin only.
 
