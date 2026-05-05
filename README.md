@@ -34,7 +34,7 @@ uv run fastapi dev src/main.py
 open http://localhost:8000/docs
 ```
 
-> Si no usas `uv`, activa un virtualenv e instala con `pip install -r requirements.txt`.
+> Si no usas `uv`, activa un virtualenv e instala con `pip install .` (lee las dependencias de `pyproject.toml`).
 
 ---
 
@@ -370,7 +370,7 @@ uv run fastapi dev src/main.py
 # Si usas pip
 python -m venv .venv
 source .venv/bin/activate  # o .venv\Scripts\activate en Windows
-pip install -r requirements.txt
+pip install .
 fastapi dev src/main.py
 ```
 
