@@ -28,6 +28,7 @@ from domain.auth.exceptions import (
     UserAlreadyExists,
 )
 from domain.exceptions import AggregatedValidationError, DomainError, ValidationError
+from domain.rate_limiting.exceptions import RateLimitExceededError
 from infrastructure.json_book_repository import JsonBookRepository
 from infrastructure.memory_book_repository import InMemoryBookRepository
 from infrastructure.repository_factory import create_repository
@@ -234,6 +235,24 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
             path=request.url.path,
         )
         return JSONResponse(status_code=409, content={"detail": str(exc)})
+
+    @app.exception_handler(RateLimitExceededError)
+    async def rate_limit_handler(
+        request: Request, exc: RateLimitExceededError
+    ) -> JSONResponse:
+        """Convert RateLimitExceededError to HTTP 429."""
+        logger.warning(
+            "rate_limit_exceeded",
+            exception_type=type(exc).__name__,
+            message=str(exc),
+            path=request.url.path,
+            retry_after=exc.retry_after,
+        )
+        return JSONResponse(
+            status_code=429,
+            content={"detail": "Too many requests"},
+            headers={"Retry-After": str(exc.retry_after)},
+        )
 
     @app.get("/")
     def root():
