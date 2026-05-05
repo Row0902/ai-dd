@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import builtins
 import uuid
+from typing import override
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -39,6 +40,7 @@ class SQLBookRepository(BookRepository):
         """
         self._session = session
 
+    @override
     async def list(self, limit: int = 20, offset: int = 0) -> builtins.list[Book]:
         """List books with SQL LIMIT/OFFSET pagination.
 
@@ -54,6 +56,7 @@ class SQLBookRepository(BookRepository):
         models = result.scalars().all()
         return [BookMapper.to_domain(m) for m in models]
 
+    @override
     async def get(self, book_id: str) -> Book | None:
         """Get a book by ID.
 
@@ -68,6 +71,7 @@ class SQLBookRepository(BookRepository):
             return None
         return BookMapper.to_domain(model)
 
+    @override
     async def get_by_name(self, name: str) -> builtins.list[Book]:
         """Search books by case-insensitive substring match on name.
 
@@ -85,6 +89,7 @@ class SQLBookRepository(BookRepository):
         models = result.scalars().all()
         return [BookMapper.to_domain(m) for m in models]
 
+    @override
     async def create(self, book: Book) -> Book:
         """Create a new book.
 
@@ -112,6 +117,7 @@ class SQLBookRepository(BookRepository):
         await self._session.refresh(model)
         return BookMapper.to_domain(model)
 
+    @override
     async def update(self, book_id: str, book: Book) -> Book | None:
         """Update an existing book.
 
@@ -135,6 +141,7 @@ class SQLBookRepository(BookRepository):
         await self._session.refresh(model)
         return BookMapper.to_domain(model)
 
+    @override
     async def delete(self, book_id: str) -> bool:
         """Delete a book by id.
 

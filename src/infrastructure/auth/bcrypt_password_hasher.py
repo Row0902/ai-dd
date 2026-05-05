@@ -1,5 +1,7 @@
 """Bcrypt-based password hasher implementing the PasswordHasher port."""
 
+from typing import override
+
 import bcrypt
 
 from domain.auth.ports import PasswordHasher
@@ -20,6 +22,7 @@ class BcryptPasswordHasher(PasswordHasher):
         """
         self.rounds = rounds
 
+    @override
     def hash(self, password: str) -> str:
         """Hash a plaintext password using bcrypt.
 
@@ -33,6 +36,7 @@ class BcryptPasswordHasher(PasswordHasher):
             password.encode("utf-8"), bcrypt.gensalt(rounds=self.rounds)
         ).decode("utf-8")
 
+    @override
     def verify(self, password: str, hashed: str) -> bool:
         """Verify a plaintext password against a bcrypt hash.
 

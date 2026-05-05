@@ -7,6 +7,7 @@ testing).  A production adapter would integrate with an email provider.
 from __future__ import annotations
 
 import logging
+from typing import override
 
 from domain.auth.ports import NotificationService
 
@@ -20,6 +21,7 @@ class LoggingNotificationService(NotificationService):
     first 8 characters are emitted.
     """
 
+    @override
     async def send_invitation(self, email: str, token: str, inviter_name: str) -> None:
         """Log an invitation notification.
 

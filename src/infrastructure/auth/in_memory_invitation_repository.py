@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import override
+
 from domain.auth.entities import Invitation
 from domain.auth.ports import InvitationRepository
 
@@ -18,6 +20,7 @@ class InMemoryInvitationRepository(InvitationRepository):
         self._invitations: dict[str, Invitation] = {}
         self._by_token: dict[str, str] = {}
 
+    @override
     async def save(self, invitation: Invitation) -> Invitation:
         """Persist an invitation and return the saved entity.
 
@@ -31,6 +34,7 @@ class InMemoryInvitationRepository(InvitationRepository):
         self._by_token[invitation.token] = invitation.id
         return invitation
 
+    @override
     async def find_by_token(self, token: str) -> Invitation | None:
         """Find an invitation by its UUID4 token, or None.
 
@@ -45,6 +49,7 @@ class InMemoryInvitationRepository(InvitationRepository):
             return None
         return self._invitations.get(inv_id)
 
+    @override
     async def mark_as_used(self, token: str) -> bool:
         """Mark an invitation as consumed.
 

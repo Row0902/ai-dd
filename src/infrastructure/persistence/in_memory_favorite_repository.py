@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import builtins
 from datetime import UTC, datetime
+from typing import override
 
 from domain.favorites.repositories import FavoriteRepository
 
@@ -15,6 +16,7 @@ class InMemoryFavoriteRepository(FavoriteRepository):
         """Initialize empty in-memory store."""
         self._favorites: dict[tuple[str, str], datetime] = {}
 
+    @override
     async def add(self, user_id: str, book_id: str) -> None:
         """Add a favorite (idempotent).
 
@@ -24,6 +26,7 @@ class InMemoryFavoriteRepository(FavoriteRepository):
         """
         self._favorites[(user_id, book_id)] = datetime.now(UTC)
 
+    @override
     async def remove(self, user_id: str, book_id: str) -> None:
         """Remove a favorite (idempotent).
 
@@ -33,6 +36,7 @@ class InMemoryFavoriteRepository(FavoriteRepository):
         """
         self._favorites.pop((user_id, book_id), None)
 
+    @override
     async def list_by_user(self, user_id: str) -> builtins.list[str]:
         """List favorite book IDs for a user, reverse chronological.
 

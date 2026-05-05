@@ -6,6 +6,8 @@ Domain ``User`` entities are converted to/from ``UserModel`` inline.
 
 from __future__ import annotations
 
+from typing import override
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -32,6 +34,7 @@ class SQLUserRepository(UserRepository):
         """
         self._session = session
 
+    @override
     async def save(self, user: User) -> User:
         """Persist a user and return the saved entity.
 
@@ -54,6 +57,7 @@ class SQLUserRepository(UserRepository):
         await self._session.refresh(model)
         return _to_domain(model)
 
+    @override
     async def find_by_email(self, email: str) -> User | None:
         """Find a user by email address.
 
@@ -70,6 +74,7 @@ class SQLUserRepository(UserRepository):
             return None
         return _to_domain(model)
 
+    @override
     async def find_by_id(self, user_id: str) -> User | None:
         """Find a user by ID.
 

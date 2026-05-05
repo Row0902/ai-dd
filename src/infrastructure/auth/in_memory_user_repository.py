@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import override
+
 from domain.auth.entities import User
 from domain.auth.ports import UserRepository
 
@@ -18,6 +20,7 @@ class InMemoryUserRepository(UserRepository):
         self._users: dict[str, User] = {}
         self._by_email: dict[str, str] = {}
 
+    @override
     async def save(self, user: User) -> User:
         """Persist a user and return the saved entity.
 
@@ -31,6 +34,7 @@ class InMemoryUserRepository(UserRepository):
         self._by_email[user.email] = user.id
         return user
 
+    @override
     async def find_by_email(self, email: str) -> User | None:
         """Find a user by email, or None if not found.
 
@@ -45,6 +49,7 @@ class InMemoryUserRepository(UserRepository):
             return None
         return self._users.get(user_id)
 
+    @override
     async def find_by_id(self, user_id: str) -> User | None:
         """Find a user by ID, or None if not found.
 

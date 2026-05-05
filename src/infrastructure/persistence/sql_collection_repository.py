@@ -7,6 +7,7 @@ and the Data Mapper pattern (``CollectionMapper``).
 from __future__ import annotations
 
 import builtins
+from typing import override
 
 from sqlalchemy import column, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,6 +33,7 @@ class SQLCollectionRepository(CollectionRepository):
         """
         self._session = session
 
+    @override
     async def save(self, collection: Collection) -> Collection:
         """Save (create or update) a collection.
 
@@ -50,6 +52,7 @@ class SQLCollectionRepository(CollectionRepository):
         await self._session.refresh(merged)
         return CollectionMapper.to_domain(merged)
 
+    @override
     async def find_by_id(self, collection_id: str) -> Collection | None:
         """Find a collection by ID.
 
@@ -64,6 +67,7 @@ class SQLCollectionRepository(CollectionRepository):
             return None
         return CollectionMapper.to_domain(model)
 
+    @override
     async def find_by_owner_id(self, owner_id: str) -> builtins.list[Collection]:
         """Find all collections owned by a user.
 
@@ -78,6 +82,7 @@ class SQLCollectionRepository(CollectionRepository):
         models = result.scalars().all()
         return [CollectionMapper.to_domain(m) for m in models]
 
+    @override
     async def list_all(self) -> builtins.list[Collection]:
         """List all collections.
 
@@ -89,6 +94,7 @@ class SQLCollectionRepository(CollectionRepository):
         models = result.scalars().all()
         return [CollectionMapper.to_domain(m) for m in models]
 
+    @override
     async def delete(self, collection_id: str) -> bool:
         """Delete a collection by ID.
 

@@ -7,6 +7,7 @@ Uses raw SQL for idempotent add (INSERT OR IGNORE) to handle duplicates.
 from __future__ import annotations
 
 import builtins
+from typing import override
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,6 +31,7 @@ class SQLFavoriteRepository(FavoriteRepository):
         """
         self._session = session
 
+    @override
     async def add(self, user_id: str, book_id: str) -> None:
         """Add a favorite (idempotent via INSERT OR IGNORE).
 
@@ -49,6 +51,7 @@ class SQLFavoriteRepository(FavoriteRepository):
         self._session.add(model)
         await self._session.commit()
 
+    @override
     async def remove(self, user_id: str, book_id: str) -> None:
         """Remove a favorite (idempotent).
 
@@ -63,6 +66,7 @@ class SQLFavoriteRepository(FavoriteRepository):
             await self._session.delete(model)
             await self._session.commit()
 
+    @override
     async def list_by_user(self, user_id: str) -> builtins.list[str]:
         """List favorite book IDs for a user, reverse chronological.
 
