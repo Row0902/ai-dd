@@ -61,7 +61,6 @@ class TestRateLimiterABC:
 
     def test_concrete_implementation_works(self) -> None:
         """A concrete subclass of RateLimiter can be instantiated."""
-
         from domain.rate_limiting import RateLimiter
 
         class StubRateLimiter(RateLimiter):

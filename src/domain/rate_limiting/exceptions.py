@@ -8,7 +8,7 @@ from domain.exceptions import DomainError
 
 
 @dataclass(eq=True)
-class RateLimitExceeded(DomainError):
+class RateLimitExceededError(DomainError):
     """Raised when a client exceeds the rate limit for an endpoint.
 
     PERMANENT CONSTRAINT — NOT frozen:
@@ -32,5 +32,5 @@ class RateLimitExceeded(DomainError):
         return f"Rate limit exceeded. Retry after {self.retry_after} seconds."
 
     def __hash__(self) -> int:
-        """Make RateLimitExceeded hashable based on retry_after."""
+        """Make RateLimitExceededError hashable based on retry_after."""
         return hash(self.retry_after)

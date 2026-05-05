@@ -1,61 +1,61 @@
-"""Tests for T4: RateLimitExceeded exception."""
+"""Tests for T4: RateLimitExceededError exception."""
 
 from __future__ import annotations
 
 
-class TestRateLimitExceeded:
-    """Verify RateLimitExceeded is a proper domain exception."""
+class TestRateLimitExceededError:
+    """Verify RateLimitExceededError is a proper domain exception."""
 
     def test_exception_is_importable(self) -> None:
-        """RateLimitExceeded can be imported from domain.rate_limiting."""
-        from domain.rate_limiting.exceptions import RateLimitExceeded
+        """RateLimitExceededError can be imported from domain.rate_limiting."""
+        from domain.rate_limiting.exceptions import RateLimitExceededError
 
-        assert RateLimitExceeded is not None
+        assert RateLimitExceededError is not None
 
     def test_exception_extends_domain_error(self) -> None:
-        """RateLimitExceeded is a subclass of DomainError."""
+        """RateLimitExceededError is a subclass of DomainError."""
         from domain.exceptions import DomainError
-        from domain.rate_limiting.exceptions import RateLimitExceeded
+        from domain.rate_limiting.exceptions import RateLimitExceededError
 
-        assert issubclass(RateLimitExceeded, DomainError)
+        assert issubclass(RateLimitExceededError, DomainError)
 
     def test_exception_is_subclass_of_exception(self) -> None:
-        """RateLimitExceeded is ultimately an Exception."""
-        from domain.rate_limiting.exceptions import RateLimitExceeded
+        """RateLimitExceededError is ultimately an Exception."""
+        from domain.rate_limiting.exceptions import RateLimitExceededError
 
-        assert issubclass(RateLimitExceeded, Exception)
+        assert issubclass(RateLimitExceededError, Exception)
 
     def test_exception_has_retry_after_field(self) -> None:
-        """RateLimitExceeded carries a retry_after integer field."""
-        from domain.rate_limiting.exceptions import RateLimitExceeded
+        """RateLimitExceededError carries a retry_after integer field."""
+        from domain.rate_limiting.exceptions import RateLimitExceededError
 
-        exc = RateLimitExceeded(retry_after=30)
+        exc = RateLimitExceededError(retry_after=30)
         assert exc.retry_after == 30
 
     def test_exception_str_representation(self) -> None:
-        """RateLimitExceeded has a readable string representation."""
-        from domain.rate_limiting.exceptions import RateLimitExceeded
+        """RateLimitExceededError has a readable string representation."""
+        from domain.rate_limiting.exceptions import RateLimitExceededError
 
-        exc = RateLimitExceeded(retry_after=45)
+        exc = RateLimitExceededError(retry_after=45)
         result = str(exc)
         assert "45" in result
         assert len(result) > 0
 
     def test_exception_can_be_raised_and_caught(self) -> None:
-        """RateLimitExceeded can be raised and caught as DomainError."""
+        """RateLimitExceededError can be raised and caught as DomainError."""
         import pytest
 
         from domain.exceptions import DomainError
-        from domain.rate_limiting.exceptions import RateLimitExceeded
+        from domain.rate_limiting.exceptions import RateLimitExceededError
 
         with pytest.raises(DomainError):
-            raise RateLimitExceeded(retry_after=10)
+            raise RateLimitExceededError(retry_after=10)
 
     def test_exception_preserves_retry_after_after_raise(self) -> None:
         """retry_after field survives exception propagation."""
-        from domain.rate_limiting.exceptions import RateLimitExceeded
+        from domain.rate_limiting.exceptions import RateLimitExceededError
 
         try:
-            raise RateLimitExceeded(retry_after=60)
-        except RateLimitExceeded as exc:
+            raise RateLimitExceededError(retry_after=60)
+        except RateLimitExceededError as exc:
             assert exc.retry_after == 60
